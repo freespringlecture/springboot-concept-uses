@@ -1,27 +1,55 @@
-# 스프링 부트 Actuator 2부: JMX와 HTTP
+# 스프링 부트 Actuator 3부: 스프링 부트 어드민
+https://github.com/codecentric/spring-boot-admin  
+> 스프링 진영에서 제공하는 프로젝트가 아니고 제3자가 오픈소스로 제공하는 애플리케이션  
+> 설정한 스프링 부트 Actuator 정보를 UI에서 확인할 수있는 애플리케이션 툴  
 
-## JConsole 사용하기
-- https://docs.oracle.com/javase/tutorial/jmx/mbeans/
-- https://docs.oracle.com/javase/7/docs/technotes/guides/management/jconsole.html
-1. console에서 jconsole 입력
-2. Local Process에서 내가 구동한 Application을 선택하고 connect
-3. SSL로 접속을 시도하다가 SSL을 적용 안했으므로 Insecure connection을 클릭
-4. 접속하면 Overview에서 Heap Memory Usage, Threads(Thread 개수), Classes(로딩한 Class개수), CPU Usage를 보여줌
-5. 그 외 각각의 정보를 상세히 볼 수 있는 Tab을 제공
+## 어드민 서버 역할 애플리케이션 생성
+### 의존성 추가
+```xml
+<dependency>
+    <groupId>de.codecentric</groupId>
+    <artifactId>spring-boot-admin-starter-server</artifactId>
+    <version>2.1.2</version>
+</dependency>
+```
 
-## VisualVM 사용하기
-- https://visualvm.github.io/download.html
-> 기존에는 jvisualvm이 java에서 제공을 했었는데 java10 부터 제공되지 않아서 별도로 설치해야됨  
-> Visual 로 jconsole 보다 훨씬 보기 좋은 UI를 제공함  
-### mbean 플러그인 추가하기
-1. Tools - Plugins - Available Plugins - VisualVM-Mbeans 설치
+#### @EnableAdminServer 어노테이션 추가
+```java
+@SpringBootApplication
+@EnableAdminServer
+public class Application {
 
-## HTTP 사용하기
-- /actuator
-- health와 info를 제외한 대부분의 Endpoint가 기본적으로 ​비공개​ 상태
-- 공개 옵션 조정  
-> 이런 정보들이 밖으로 노출되면 매우 위험하므로 `SpringSecurity` 를 적용해서 `Endpoints` 를 `Admin` 만 접근이 가능하도록 해야함  
-  - `management.endpoints.web.exposure.include=*`  
-  > 모든 EndPoints 모두공개 설정  
-  - `management.endpoints.web.exposure.exclude=env,beans`  
-  > 일부 EndPoints 비공개 설정  
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+
+}
+```
+
+## 어드민 클라이언트 설정
+> 설정하는 방법은 두가지가 있음  
+> 아래와 같이 client 라이브러리를 통해서 설정하는 방법과 스프링 클라우드를 사용해서 디스커버리 되도록 하는 방법  
+> 이런 정보들이 밖으로 노출되면 매우 위험하므로 SpringSecurity를 적용해서 Endpoints를 Admin만 접근이 가능하도록 해야함  
+### 어드민 클라이언트 라이브러리 적용
+> 추가하면서 jolokia 의존성이 따라서 들어오므로 Mbean을 HTTP를 통해서 볼수있게 됨  
+
+### 의존성 추가
+```xml
+<dependency>
+    <groupId>de.codecentric</groupId>
+    <artifactId>spring-boot-admin-starter-client</artifactId>
+    <version>2.1.2</version>
+</dependency>
+```
+
+#### properties 설정
+> 어드민 서버 주소를 설정
+```
+spring.boot.admin.client.url​=​http://localhost:8080
+management.endpoints.web.exposure.include​=​*
+```
+
+#### client 서버포트 변경
+```
+server.port=18080
+```
