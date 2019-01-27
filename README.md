@@ -1,76 +1,98 @@
-# 내장 웹 서버 응용 1부: 컨테이너와 포트
-## 컨테이너와 포트
-### 다른 서블릿 컨테이너로 변경
-https://docs.spring.io/spring-boot/docs/current/reference/html/howto-embedded-web-servers.html
- - tomcat, jetty, undertow
-```xml
-<dependency>
-	<groupId>org.springframework.boot</groupId>
-	<artifactId>spring-boot-starter-web</artifactId>
-	<exclusions>
-		<!-- Exclude the Tomcat dependency -->
-		<exclusion>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-tomcat</artifactId>
-		</exclusion>
-	</exclusions>
-</dependency>
-<!-- Use Jetty instead -->
-<dependency>
-	<groupId>org.springframework.boot</groupId>
-	<artifactId>spring-boot-starter-jetty</artifactId>
-</dependency>
+# 내장 웹 서버 응용 2부: HTTPS와 HTTP2
+https://opentutorials.org/course/228/4894  
+https://gist.github.com/keesun/f93f0b83d7232137283450e08a53c4fd  
+
+## HTTPS 설정하기
+- 키스토어 만들기
+- HTTP는 못쓰네?
+
+## HTTP 커넥터는 코딩으로 설정하기 
+https://github.com/spring-projects/spring-boot/tree/v2.0.3.RELEASE/spring-boot-samples/spring-boot-sample-tomcat-multi-connectors
+
+## HTTP2 설정
+- server.http2.enable
+- 사용하는 서블릿 컨테이너 마다 다름
+
+### keystore 인증서 생성
+> 터미널에서 아래의 명령어로 keystore 파일 생성
+```
+keytool -genkey 
+  -alias tomcat
+  -storetype PKCS12 
+  -keyalg RSA 
+  -keysize 2048 
+  -keystore keystore.p12 
+  -validity 4000
+```
+  
+> 인증서 alias를 tomcat이라고 주고 `server.ssl.keyAlias=tomcat`이라고 주지 않으면 아래와 같은 에러가 발생  
+```bash
+curl: (35) error:14077410:SSL routines:SSL23_GET_SERVER_HELLO:sslv3 alert handshake failure
 ```
 
-### 웹서버사용하지않기
-https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#howto-externalize-configuration
-> WebServlet 의존성들이 클래스패스에 있더라도 무시하고 그냥 None WebApplication으로 실행하고 끝냄
-#### application.properties에 아래 설정
+### application.properties 에 생성된 keystore 인증서 설정
+> classpath에 keystore.p12 파일이 있으면 server.ssl.key-store=classpath:keystore.p12
 ```
-spring.main.web-application-type=none
+server.ssl.key-store=keystore.p12
+server.ssl.key-store-password=123456
+server.ssl.keyStoreType=PKCS12
+server.ssl.keyAlias=spring
+```
+  
+> 위 와 같이 설정하면 자동으로 HTTPS 가 설정되는데 공식인증기관에서 발급된 인증서가 아니라 안전하지 않다고 경고함  
+> HTTP 커넥터가 하나인데 거기에 HTTPS를 설정해서 더이상 HTTP는 사용할 수 없음  
+  
+### curl http2 지원되도록 설치
+```bash
+# install cURL with nghttp2 support
+brew install curl --with-nghttp2
+
+# link the formula to replace the system cURL
+brew link curl --force
 ```
 
-#### @SpringBootApplication에 설정
+```bash
+curl -I -k --http2 https://localhost:8080/hello
+```
+
+### HTTP Connector 추가하기
+https://github.com/spring-projects/spring-boot/blob/v2.0.3.RELEASE/spring-boot-samples/spring-boot-sample-tomcat-multi-connectors/src/main/java/sample/tomcat/multiconnector/SampleTomcatTwoConnectorsApplication.java
 ```java
-@SpringBootApplication
-public class Application {
-    public static void main(String[] args) {
-        SpringApplication application = new SpringApplication(Application.class);
-        application.setWebApplicationType(WebApplicationType.NONE);
-        application.run(args);
+   @Bean
+    public ServletWebServerFactory serverFactory() {
+        TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory();
+        tomcat.addAdditionalTomcatConnectors(createStandardConnector());
+        return tomcat;
     }
-}
-```
-### 포트
-#### server.port
-https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#howto-use-short-command-line-arguments 
-#### 랜덤포트 
-> 아래와 같이 설정하면 랜덤으로 사용할 수 있는 포트 찾아서 띄워줌 
-```
-server.port=0
-```
-### ApplicationListner<ServletWebServerInitializedEvent>
-> 위와 같이 지정한 포트를 Application에서 어떻게 사용할 것인가
-https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#howto-discover-the-http-port-at-runtime
 
-#### 이벤트 리스너 생성
-> 웹서버가 생성이 되면 servletWebServer가 실행되고 이 이벤트 리스너 핸들러가 호출이 되고 onApplicationEvent 콜백이 실행됨  
-> 웹 애플리케이션 컨텍스트 이므로 웹서버를 알 수 있고 웹서버에서 포트 정보를 가져올 수 있음  
-```java
-@Component
-public class PortListener implements ApplicationListener<ServletWebServerInitializedEvent> {
-    @Override
-    public void onApplicationEvent(ServletWebServerInitializedEvent event) {
-      ServletWebServerApplicationContext applicationContext = event.getApplicationContext();
-      applicationContext.getWebServer().getPort();
+    private Connector createStandardConnector() {
+        Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+        connector.setPort(8080);
+        return connector;
     }
-}
 ```
 
-### Enable HTTP Response Compression
-> 응답을 압축 해서 보냄  
-https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#how-to-enable-http-response-compression
+#### application.properties
+> 기존 HTTPS 가 적용된 포트는 8443으로 변경
+```
+server.port=8443
+```
 
+### HTTP2 활성화
+https://docs.spring.io/spring-boot/docs/current/reference/html/howto-embedded-web-servers.html#howto-configure-http2-tomcat
+> HTTP2를 설정하려면 반드시 HTTPS를 먼저 설정을 한다음 해야된다  
 ```
-server.compression.enabled=true
+server.http2.enabled=true
 ```
+  
+> Undertow의 경우 HTTPS만 설정되어있으면 추가 설정하지 않아도 HTTP2가 활성화됨  
+  
+### TOMCAT 에서 HTTP2 설정
+https://docs.spring.io/spring-boot/docs/current/reference/html/howto-embedded-web-servers.html#howto-configure-http2-tomcat
+> Tomcat 8.5에서는 설정이 너무 번거로움 Tomcat 9 이상에서는 별 다른 설정이 필요없음  
+> 위에 exclude tomcat 설정을 해제 하고 이렇게 셋팅하면 된다  
+
+- Intellij 설정
+> 아래 위치들의 Java 버전을 변경  
+1. File - Project Structure - Project
+2. File - Project Structure - Modules - Dependencies
