@@ -9,6 +9,15 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 @EnableConfigurationProperties(FreelifeProperties.class)
 public class Application {
 
+    // 외부의 설정 파일의 경우 흔한 경우는 아님
+    /*
+    @ConfigurationProperties("server")
+    @Bean
+    public ServerProperties serverProperties() {
+        return new ServerProperties();
+    }
+    */
+
     public static void main(String[] args) {
         SpringApplication app = new SpringApplication(Application.class);
         app.setWebApplicationType(WebApplicationType.NONE);
