@@ -1,14 +1,21 @@
-# 4. 스프링 부트 프로젝트 구조
+# 1. 의존성 관리 이해
+> `spring-boot-starter-parent` 를 지정하면 `spring-boot-dependencies` 에서 Dependencies에서 의존성을 정의해서 수많은 라이브러리들이 자동으로 설정됨
 
-## 권장하는 SpringBootApplication 위치 및 구조
-> SpringBootApplication 설정 파일이 있는 위치 부터 `@ComponentScan` 을 해서 Bean으로 등록함
-https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#using-boot-structuring-your-code
-
-## 메이븐 기본 프로젝트 구조와 동일
-- 소스 코드 (src\main\java)
-- 소스 리소스 (src\main\resource)
-- 테스트 코드 (src\test\java)
-- 테스트 리소스 (src\test\resource)
-
-## 메인 애플리케이션 위치
-- 기본패키지
+## parent 상속구조를 사용하지 않을 때
+> 임의로 Spring Boot 버전 정의
+> 의존성 외에 다른 Spring Boot에 최적화된 설정들(인코딩설정, 리소스필터링등)때문에 parent로 정의하는게 좋음
+- 13.2.2 Using Spring Boot without the Parent POM
+```xml
+<dependencyManagement>
+		<dependencies>
+		<dependency>
+			<!-- Import dependency management from Spring Boot -->
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-dependencies</artifactId>
+			<version>2.1.1.RELEASE</version>
+			<type>pom</type>
+			<scope>import</scope>
+		</dependency>
+	</dependencies>
+</dependencyManagement>
+```
