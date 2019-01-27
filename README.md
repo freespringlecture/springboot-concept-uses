@@ -1,106 +1,105 @@
-# 스프링 웹 MVC 10부: Spring HATEOAS
-> Hypermedia ​A​s ​T​he ​E​ngine ​O​f A​ ​pplication ​S​tate  
-> HATEOAS를 구현하기에 편리한 기능들을 제공하는 라이브러리  
-> REST에서 R은 Representational  
-- 서버: 현재 리소스와 ​연관된 링크 정보​를 클라이언트에게 제공한다
-- 클라이언트: ​연관된 링크 정보​를 바탕으로 리소스에 접근한다
-- 연관된 링크 정보
-  - Rel​ation
-  - H​ypertext ​Ref​erence
+# 스프링 웹 MVC 11부: CORS
 
-### spring-boot-starter-hateoas 의존성 추가
-```xml
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-hateoas</artifactId>
-</dependency>
-```
-- https://spring.io/understanding/HATEOAS
-- https://spring.io/guides/gs/rest-hateoas/
-- https://docs.spring.io/spring-hateoas/docs/current/reference/html/
+## SOP과 CORS
+> 웹 브라우저가 지원하는 표준기술  
+- Single-Origin Policy  
+> 같은 Origin에만 보낼 수 있는 표준기술  
+- Cross-Origin Resource Sharing  
+> Single-Origin Policy를 우회하기 위한 표준기술  
+> 서로 다른 Origin끼리 Resource를 공유할 수 있는 방법을 제공하는 표준  
 
-## HATEOAS가 자동설정으로 제공하는 기능
-### ObjectMapper 제공
-> 제공하는 리소스를 JSON으로 변환할 때 사용하는 인터페이스  
-> 따로 디펜던시를 추가하지 않아도 바로 사용가능  
-- spring.jackson.*  
-> Properties 파일에서 ObjectMapper를 커스터마이징 할 수 있음  
-- Jackson2ObjectMapperBuilder  
+### Origin
+> 기본적으로는 Origin이 다르면 서로 호출을 못함  
+> 아래 항목들 세가지를 조합한 것이 하나의 Origin 임  
+> 이 하나의 Origin이 또다른 Origin을 서로 호출할 수 없음  
+- URI 스키마 (http, https)
+- hostname (whiteship.me, localhost)
+- 포트 (8080, 18080)
 
-### LinkDiscovers 제공
-> REST API로 다른쪽 서버정보를 요청해서 응답을 받았는데 그 API가 HATEOAS를 지원하면  
-> getResourceByRelation 메서드로 self에 해당하는 링크 정보를 가져올 수 있는 Utility성 클래스  
-- 클라이언트 쪽에서 링크 정보를 Rel 이름으로 찾을때 사용할 수 있는 XPath 확장 클래스
+## 스프링 MVC @CrossOrigin
+> 스프링에서 사용하려면 빈 설정을 해줘야하는데 스프링 부트에서 자동으로 설정해주므로 별다른 설정을 할 필요 없이 사용가능  
+- https://docs.spring.io/spring/docs/current/spring-framework-reference/web.html#mvc-cors
+- @Controller나 @RequestMapping에 추가하거나
+- WebMvcConfigurer 인터페이스를 상속받아서 글로벌 설정  
+> 스프링 부트가 제공하는 스프링 MVC 기능을 그대로 다 사용하면서 추가로 확장  
 
-## HATEOAS 구현 테스트
-> HATEOAS에서 제공하는 Resource는 우리가 제공하는 Resource + Link정보  
-> Link를 만드는 다양한 클래스들이 존재하는데 Spring HATEOAS가 제공하는 것들임  
+### 테스트
+> Access-Control-Allow-Origin 어떤 오리진이 server에 접근할 수 있는지 알려주는 Header 값  
+> server의 Access-Control-Allow-Origin Header 값을 Client에 보내서 매칭이 되면 요청이 가능함  
 
-1. 테스트 코드 작성
+### Server
+1. 단일 CrossOrigin 허용 Server 테스트 코드
 ```java
-@RunWith(SpringRunner.class)
-@WebMvcTest(SampleController.class)
-public class SampleControllerTest {
-
-    @Autowired
-    MockMvc mockMvc;
-
-    @Test
-    public void hello() throws Exception {
-        mockMvc.perform(get("/hello"))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$._links.self").exists());
-    }
-}
-```
-
-2. 컨트롤러 작성
-```java
+@SpringBootApplication
 @RestController
-public class SampleController {
+public class Application {
 
+    //CrossOrigin 을 허용할 주소를 설정
+    @CrossOrigin(origins = "http://localhost:18080")
     @GetMapping("/hello")
-    public Resource<Hello> hello(){
-        Hello hello = new Hello();
-        hello.setPrefix("Hey,");
-        hello.setName("freelife");
-
-        Resource<Hello> helloResource = new Resource<>(hello);
-        //SampleController 클래스에 존재하는 hello라는 메서드에 대한 링크를 만들어서 self라는 릴레이션을 만들어서 추가함
-        helloResource.add(linkTo(methodOn(SampleController.class).hello()).withSelfRel());
-
-        return helloResource;
+    public String hello() {
+        return "hello";
     }
+
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+
 }
 ```
 
-3. Hello 클래스 작성
+2. WebMvcConfigurer 인터페이스를 상속받아서 글로벌 설정
 ```java
-public class Hello {
-
-    private String prefix;
-    private String name;
-
-    public String getPrefix() {
-        return prefix;
-    }
-
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
 
     @Override
-    public String toString() {
-        return prefix + " " + name;
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/hello") // hello를 registry에 등록 /** 하면 전부다 허용
+                .allowedOrigins("http://localhost:18080");
     }
 }
+```
+
+#### 요청 Client
+1. jquery dependency 추가
+```xml
+<dependency>
+    <groupId>org.webjars.bower</groupId>
+    <artifactId>jquery</artifactId>
+    <version>3.3.1</version>
+</dependency>
+```
+
+2. src/resources/static/index.html 생성
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Title</title>
+</head>
+<body>
+  <h1>CORS Client</h1>
+</body>
+<script src="/webjars/jquery/3.3.1/dist/jquery.min.js"></script>
+<script>
+  $(function () {
+    $.ajax("http://localhost:8080/hello")
+      .done(function (msg) {
+        alert(msg);
+      })
+      .fail(function () {
+        alert("fail");
+      })
+  })
+</script>
+</html>
+```
+
+3. application.properties에 포트 설정
+```
+server.port=18080
 ```
