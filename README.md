@@ -1,229 +1,52 @@
-# 스프링 데이터 6부: Spring-Data-JPA 연동
+# 스프링 데이터 7부: 데이터베이스 초기화
+## JPA를 사용한 데이터베이스 초기화
+- spring.jpa.hibernate.ddl-auto 옵션  
+> 작성해둔 Entity 정보를 바탕으로 스키마를 생성  
+  > 데이터가 유지되므로 주로 `spring.jpa.hibernate.ddl-auto=update` 로 개발시에는 개발을 함  
+  > update 단점은 컬럼이 변경되어도 그 컬럼은 남겨두고 새로변경된 컬럼만 추가하므로 운영시에 지저분해짐  
+  - update: 기존의 스키마는 놔두고 추가된 사항만 변경함  
+  - create-drop: 처음에 스키마를 만들고 Application 종료시 스키마 drop
+  - create: 처음에 지우고 스키마를 새로 만듬
+  - validate: 현재 Entity 맵핑이 릴레이션 DB에 맵핑할 수 있는 상황인지 맵핑이 되는지를 검증
 
-## h2를 test 의존성으로 추가
-> TEST는 h2를 사용  
-```xml
-<dependency>
-    <groupId>com.h2database</groupId>
-    <artifactId>h2</artifactId>
-    <scope>test</scope>
-</dependency>
+- spring.jpa.generate-ddl  
+> DDL에 변경을 허용하기 위한 프로퍼티  
+> 기본적으로 false로 되어있어 true로 설정 해줘야 동작함  
+
+- spring.jpa.show-sql  
+> 기본적으로 false로 되어있어 true로 설정 해주면 console에 hibernate 로그를 보여줌  
+
+### 운영용 설정
+```
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.generate-ddl=false
 ```
 
-## PostgreSQL 의존성 추가
-> Application을 실행할때는 PostgreSQL을 사용  
-```xml
-<dependency>
-    <groupId>org.postgresql</groupId>
-    <artifactId>postgresql</artifactId>
-</dependency>
+#### Test에서는 아래의 두 옵션을 주석처리
+```
+#spring.jpa.hibernate.ddl-auto=validate
+#spring.jpa.generate-ddl=false
 ```
 
-## 스프링 데이터 JPA 사용하기
-- @Entity 클래스 만들기
-- Repository 만들기
-
-## 스프링 데이터 리파지토리 테스트 만들기
-> 슬라이스 테스트란 Reopository와 Repository와 관련된 빈 들만 등록을 해서 테스트를 만드는 것  
-- H2 DB를 테스트 의존성에 추가하기  
-
-### @DataJpaTest (슬라이스 테스트) 작성
-> @DataJpaTest를 사용하지 않고 @SpringBootTest로 테스트 하면 integration 테스트 임  
-> Application에 있는 @SpringBootApplication을 찾아서 모든 빈들을 다 등록하고 application.properties가 적용되고 postgreSQL 사용하게됨  
-> @SpringBootTest(properties = "spring.datasource.url=''") 로 다른 데이터베이스를 설정해서 사용이 가능하긴 하지만  
-> 테스트 할때는 In-memory 데이터베이스로 테스트 하기를 권장함  
-> 슬라이스 테스트를 할 때는 반드시 In-memory 데이터베이스가 필요 하므로 H2를 test 의존성으로 추가  
-
-### 이전시간에 했던 PostgreSQL Docker 시작
-```bash
-docker start postgres_boot
-docker ps
+## SQL 스크립트를 사용한 데이터베이스 초기화
+> 테스트할때마다 Application이 구동될 때 마다 스크립트를 통해 데이터베이스를 초기화함  
+> 스크립트를 만든상태에서는 ddl-auto, generate-ddl 옵션을 줘도 스크립트로 먼저 스키마 초기화를 하므로 에러가 발생하지 않음  
+> 스크립트 실행 순서는 schema.sql -> data.sql 순서이므로 초기데이터를 스크립트로 넣을 수 있음  
+- schema.sql 또는 schema-${platform}.sql  
+- data.sql 또는 data-${platform}.sql
+- ${platform} 값은 spring.datasource.platform 으로 설정 가능
+> 아래외 같이 옵션을주고 postgresql-schema.sql로 주면 platform별로 스크립트를 작성할 수 있음  
+```
+spring.datasource.platform=postgresql
 ```
 
-### PostgreSQL Wanning 해결법
-> 드라버가 createClob()라는 Method를 지원하지않아서 Wanning이 발생  
-  
-| 항목 | 내용                                                         |
-| ---- | ------------------------------------------------------------ |
-| 경고 | org.postgresql.jdbc.PgConnection.createClob() is not yet implemented |
-| 해결 | spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true |
-
-### DatabaseMetaData 확인 테스트 코드
-```java
-@RunWith(SpringRunner.class)
-@DataJpaTest
-public class AccountRepositoryTest {
-
-    @Autowired
-    DataSource dataSource;
-
-    @Autowired
-    JdbcTemplate jdbcTemplate;
-
-    @Autowired
-    AccountRepository accountRepository;
-
-    @Test
-    public void di() throws SQLException {
-
-        try(Connection connection = dataSource.getConnection()){
-            DatabaseMetaData metaData = connection.getMetaData();
-            System.out.println(metaData.getURL());
-            System.out.println(metaData.getDriverName());
-            System.out.println(metaData.getUserName());
-        }
-    }
-}
+### 테스트 코드
+1. 테스트에서 데이터베이스 초기화 SQL을 만든다
+```sql
+drop table account if exists
+drop sequence if exists hibernate_sequence
+create sequence hibernate_sequence start with 1 increment by 1
+create table account (id bigint not null, email varchar(255), password varchar(255), username varchar(255), primary key (id))
 ```
 
-#### Entity Account 클래스 작성
-> equals & hashcode도 추가  
-```java
-@Entity
-public class Account {
-
-    @Id
-    @GeneratedValue //Repository를 통해 저장을 할 때 ID를 자동으로 생성
-    private Long id;
-    private String username;
-    private String password;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Account account = (Account) o;
-        return Objects.equals(id, account.id) &&
-                Objects.equals(username, account.username) &&
-                Objects.equals(password, account.password);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, username, password);
-    }
-}
-```
-
-#### JpaRepository 인터페이스 작성
-```java
-//JpaRepository< Entity의 타입, ID의 타입>
-public interface AccountRepository extends JpaRepository<Account, Long> {
-    Account findByUsername(String username);
-}
-```
-
-#### 테스트 코드 작성
-```java
-@RunWith(SpringRunner.class)
-@DataJpaTest
-public class AccountRepositoryTest {
-
-    @Autowired
-    DataSource dataSource;
-
-    @Autowired
-    JdbcTemplate jdbcTemplate;
-
-    @Autowired
-    AccountRepository accountRepository;
-
-    @Test
-    public void di() throws SQLException {
-        Account account = new Account();
-        account.setUsername("freelife");
-        account.setPassword("1879asdf");
-
-        // 새로운 account 등록
-        Account newAccount = accountRepository.save(account);
-        // 새로운 account가 등록 됐는지 확인
-        assertThat(newAccount).isNotNull();
-
-        // 새로운 account의 username으로 조회해서 데이터가 있는지 확인
-        Account existingAccount = accountRepository.findByUsername(newAccount.getUsername());
-        assertThat(existingAccount).isNotNull();
-
-        // 없는 username으로 조회해서 데이터가 없는지 확인
-        Account nonExistingAccount = accountRepository.findByUsername("ironman");
-        assertThat(nonExistingAccount).isNull();
-    }
-}
-```
-
-#### JpaRepository Optional로 변경
-```java
-//JpaRepository< Entity의 타입, ID의 타입>
-public interface AccountRepository extends JpaRepository<Account, Long> {
-    Optional<Account> findByUsername(String username);
-}
-```
-
-#### Optional로 테스트 코드 변경
-```java
-@RunWith(SpringRunner.class)
-@DataJpaTest
-public class AccountRepositoryTest {
-
-    @Autowired
-    DataSource dataSource;
-
-    @Autowired
-    JdbcTemplate jdbcTemplate;
-
-    @Autowired
-    AccountRepository accountRepository;
-
-    @Test
-    public void di() throws SQLException {
-        Account account = new Account();
-        account.setUsername("freelife");
-        account.setPassword("1879asdf");
-
-        // 새로운 account 등록
-        Account newAccount = accountRepository.save(account);
-        // 새로운 account가 등록 됐는지 확인
-        assertThat(newAccount).isNotNull();
-
-        // 새로운 account의 username으로 조회해서 데이터가 있는지 확인
-        Optional<Account> existingAccount = accountRepository.findByUsername(newAccount.getUsername());
-        assertThat(existingAccount).isNotEmpty();
-
-        // 없는 username으로 조회해서 데이터가 없는지 확인
-        Optional<Account> nonExistingAccount = accountRepository.findByUsername("ironman");
-        assertThat(nonExistingAccount).isEmpty();
-    }
-```
-
-### native Query사용법
-> 아래와 같은 형식으로 nativeQuery로 사용해도 되지만 JPA에서 제공하는 Query Languge를 사용해서 JPQL로 작성하는 것을 권장  
-```java
-//JpaRepository< Entity의 타입, ID의 타입>
-public interface AccountRepository extends JpaRepository<Account, Long> {
-    @Query(nativeQuery = true, value = "select * from account where username = '{0}]")
-    Account findByUsername(String username);
-}
-```
+2. src/resources 경로에 schema.sql 파일을 생성하고 SQL을 붙여넣는다

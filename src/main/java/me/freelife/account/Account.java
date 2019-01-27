@@ -13,6 +13,7 @@ public class Account {
     private Long id;
     private String username;
     private String password;
+    private String email;
 
     public Long getId() {
         return id;
@@ -38,6 +39,14 @@ public class Account {
         this.password = password;
     }
 
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -45,11 +54,13 @@ public class Account {
         Account account = (Account) o;
         return Objects.equals(id, account.id) &&
                 Objects.equals(username, account.username) &&
-                Objects.equals(password, account.password);
+                Objects.equals(password, account.password) &&
+                Objects.equals(email, account.email);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, username, password);
+        return Objects.hash(id, username, password, email);
     }
+
 }
