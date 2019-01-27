@@ -9,8 +9,6 @@ public class Application {
 
     public static void main(String[] args) {
         SpringApplication app = new SpringApplication(Application.class);
-        app.addListeners(new SampleListener());
-        //NONE 설정
         app.setWebApplicationType(WebApplicationType.NONE);
         app.run(args);
     }

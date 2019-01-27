@@ -1,114 +1,74 @@
-# SpringApplication 2부
-https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-spring-application.html#boot-features-application-events-and-listeners
+# 외부 설정 1부
+## 사용할 수 있는 외부 설정
+- properties
+- YAML
+- 환경변수
+- 커맨드 라인 아규먼트
 
-### ApplicationEvent 등록
-> ApplicationContext를 만들기 전에 사용하는 리스너는 @Bean으로 등록할 수 없다  
-  
-#### SampleListner 작성
-> ApplicationStartingEvent 는 ApplicationContext 가 만들어기 전에 발생하는 이벤트이므로 빈등록 설정을 해도 빈으로 등록할 수 없음
-```java
-public class SampleListener implements ApplicationListener<ApplicationStartingEvent> {
-    @Override
-    public void onApplicationEvent(ApplicationStartingEvent event) {
-        System.out.println("=======================");
-        System.out.println("Application is Starting");
-        System.out.println("=======================");
-    }
-}
-```
-
-#### addListners()
-```java
-application.addListeners(new SampleListener());
-```
-
-#### 빈으로 등록 가능한 Listener 예시
-> ApplicationStartedEvent 의 경우 ApplicationContext 가 만들어진 다음에 발생하는 이벤트이므로 빈으로 등록해서 서용 가능
-```java
-@Component
-public class StartedListener implements ApplicationListener<ApplicationStartedEvent> {
-    @Override
-    public void onApplicationEvent(ApplicationStartedEvent event) {
-        System.out.println("===================");
-        System.out.println("Application Started");
-        System.out.println("===================");
-    }
-}
-```
-
-## WebApplicationType 설정
-> `SERVLET`이 없고 `REACTIVE`로 동작하지만 `SERVLET`이 있으면 무조건 `SERVLET`로 동작함  
-> Spring MVC가 들어있으면 기본적으로 `SERVLET`로 동작함  
-> Spring Webfulx가 들어있으면 기본적으로 `REACTIVE`로 동작함  
-> `SERVLET`, `REACTIVE`둘다 없으면 NONE로 동작  
-
-### WebApplicationType 종류
-#### NONE : WebApplication 사용안함 설정
-```java
-application.setWebApplicationType(WebApplicationType.NONE);
-```
-#### SERVLET : SERVLET 사용 설정
-```java
-application.setWebApplicationType(WebApplicationType.SERVLET);
-```
-#### REACTIVE : REACTIVE 사용 설정
-```java
-application.setWebApplicationType(WebApplicationType.REACTIVE);
-```
-
-## Application Arguments
-> `-D` 들어오는 옵션은 `JVM` 옵션 `--`로 들어오는 옵션은 Program arguments  
-
-### TEST Code
-> `--`으로 옵션을 준 bar만 Application Arguments 이므로 true로 출력됨
-```java
-@Component
-public class SampleArguments {
-
-    public SampleArguments(ApplicationArguments arguments) {
-        System.out.println("foo: "+arguments.containsOption("foo"));
-        System.out.println("bar: "+arguments.containsOption("bar"));
-    }
-}
-```
-
-### Console 에서 테스트
-1. 먼저 Maven Clean 후 패키징
+## 프로퍼티 우선 순위
+1. 유저 홈 디렉토리에 있는 spring-boot-dev-tools.properties
+2. 테스트에 있는 @TestPropertySource
+3. @SpringBootTest 애노테이션의 properties 애트리뷰트
+4. 커맨드 라인 아규먼트
 ```bash
-mvn clean package -DskipTests
+java -jar springinit-0.0.1-SNAPSHOT.jar --freelife.name=mavel
 ```
+5. SPRING_APPLICATION_JSON (환경 변수 또는 시스템 프로티) 에 들어있는 프로퍼티
+https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-external-config
+6. ServletConfig 파라미터
+7. ServletContext 파라미터
+8. java:comp/env JNDI 애트리뷰트
+9.  System.getProperties() 자바 시스템 프로퍼티
+10. OS 환경 변수
+11. RandomValuePropertySource
+12. JAR 밖에 있는 특정 프로파일용 application properties
+13. JAR 안에 있는 특정 프로파일용 application properties
+14. JAR 밖에 있는 application properties
+15. JAR 안에 있는 application properties
+16. @PropertySource
+17. 기본 프로퍼티 (SpringApplication.setDefaultProperties)
 
-2. target 폴더에서 java -jar 명령으로 Test
-```bash
- java -jar springinit-0.0.1-SNAPSHOT.jar --foo --bar
-```
-
-## Application 실행한 뒤 뭔가 실행하고 싶을때
-> 두가지가 있지만 ApplicationRunner 사용을 추천함  
-> 둘다 `JVM` 옵션은 받지 못하고 Application Arguments 옵션(`--`)으로 준 값만 받을 수 있음  
-> ApplicationRunner이 여러개이면 `@Order(1)` 로 순서를 주어 우선순위를 정할 수 있음 숫자가 낮을 수록 우선순위가 높음  
-
-### ApplicationRunner
-> 아래와 같이 ApplicationRunner 를 상속받아 코드를 작성하면 Application 실행한뒤 로직을 실행함
+## Bug 발생 포인트
+> test package에 main package에 작성된 property 변수가 없으면 Error가 발생함  
+> 이유는 main package를 먼저 빌드해서 classpath에 넣고 test package를 빌드 할 때  
+> main package의 properties 파일을 오버라이딩 하는데  
+> 변수 설정이 다르면 기존 변수를 없애버리므로 오류가 발생함  
+> 해결법은 똑같이 properties 를 맞춰주거나 아래의 세가지 방법으로 해결함  
+#### 4순위 방법 `@SpringBootTest` Annotation에 properties 직접 지정
 ```java
-@Component
-public class SampleRunner implements ApplicationRunner {
-
-    @Override
-    public void run(ApplicationArguments args) throws Exception {
-        System.out.println("foo: "+args.containsOption("foo"));
-        System.out.println("bar: "+args.containsOption("bar"));
-    }
-}
+@SpringBootTest(properties = "freelife.age=2")
 ```
 
-### CommandLineRunner
+#### 3순위 방법으로 `@TestPropertySource`에 properties 직접 지정
 ```java
-@Component
-public class SampleCommandLineRunner implements CommandLineRunner {
-    @Override
-    public void run(String... args) throws Exception {
-        Arrays.stream(args).forEach(System.out::println);
-    }
-}
+@TestPropertySource(properties = {"freelife.name=superman", "freelife.age=23"})
+```
+
+#### 2순위 방법 `@TestPropertySource`에 추가로 생성한 `test.properties` 파일 locations 지정
+> main package application.properties 파일이 classpath에 생성된 후 동일한 property 변수를 덮어씀
+```java
+@TestPropertySource(locations = "classpath:/test.properties")
+```
+
+### application.properties 우선 순위 (높은게 낮은걸 덮어 씁니다.)
+> 아래의 네가지 위치에 application.properties가 위치할 수 있는데 위치에 따라 우선순위가 달라짐  
+1. file:./config/
+2. file:./
+3. classpath:/config/
+4. classpath:/
+
+## application.properties 랜덤값 설정하기
+https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-external-config-random-values
+> random으로 값을 줄때 공백이 있으면 안됨 `${random.int(0,100)}` 이렇게 줘야됨  
+- ${random.*}
+
+## 플레이스 홀더
+> 위에서 사용한 변수는 재사용할 수 있음
+- name = freelife
+- fullName = ${name} baik
+
+## Command Line Application 끄는법
+https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-external-config-command-line-args
+```java
+SpringApplication.setAddCommandLineProperties(false)
 ```
