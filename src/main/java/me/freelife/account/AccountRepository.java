@@ -1,9 +1,6 @@
 package me.freelife.account;
 
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.neo4j.repository.Neo4jRepository;
 
-import java.util.Optional;
-
-public interface AccountRepository extends MongoRepository<Account, String> {
-    Optional<Account> findByEmail(String email);
+public interface AccountRepository extends Neo4jRepository<Account, Long> {
 }
