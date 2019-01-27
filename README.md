@@ -1,33 +1,14 @@
-# 스프링 웹 MVC 5부: 웹JAR
-> 각종 플러그인들을 JAR파일로 추가할 수 있음  
-### jQuery dependency 추가
-```xml
-<dependency>
-    <groupId>org.webjars.bower</groupId>
-    <artifactId>jquery</artifactId>
-    <version>3.3.1</version>
-</dependency>
-```
-### jQuery webjars 사용
-```html
-<script ​src=​"/webjars/jquery/3.3.1/dist/jquery.min.js"​></script>
-<script>
-    $(function() {
-        console.log("ready!");
-    });
-</script>
-```
+# 스프링 웹 MVC 6부: index 페이지와 파비콘
+## 웰컴 페이지
+> Application `/` 요청했을 때 호출되는 페이지  
+> 지정이 안되어있으면 SpringBoot의 기본적인 ErrorHandler가 보여주는 Error 페이지가 나타남  
+> 정적페이지(index.html)를 보여주는 방법과 동적페이지(템플릿 엔진 사용)를 보여주는 방법 두가지가 있음  
+- 기본 리소스 위치에 index.html 찾아 보고 있으면 제공
+- index.템플릿 찾아 보고 있으면 제공
+- 둘 다 없으면 에러 페이지
 
-## 웹JAR 맵핑 “​/webjars/**​”
-> webjars 플러그인들의 버전 생략하고 사용하려면  
-> resource chaning 이라는 SpringFrameWrok 에 포함된 기능으로 동작  
-> Resource Handler 와 Resource Transformer를 체이닝 하는 하는 기술   
-
-### webjars-locator-core 의존성 추가
-```xml
-<dependency>
-    <groupId>org.webjars</groupId>
-    <artifactId>webjars-locator-core</artifactId>
-    <version>0.36</version>
-</dependency>
-```
+## favicon
+1. 파비콘 만들기 ​https://favicon.io/
+2. favicon.ico 파일을 static 폴더에 복사 후 Build Project
+3. 파비콘이 안바뀔 때 - Build - Rebuild Project  
+  https://stackoverflow.com/questions/2208933/how-do-i-force-a-favicon-refresh
