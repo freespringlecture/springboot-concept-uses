@@ -16,24 +16,4 @@ public class Application {
         SpringApplication.run(Application.class, args);
     }
 
-    @Bean
-    public WebClientCustomizer webClientCustomizer() {
-        return new WebClientCustomizer() {
-            @Override
-            public void customize(WebClient.Builder webClientBuilder) {
-                webClientBuilder.baseUrl("http://localhost:8080");
-            }
-        };
-    }
-
-    @Bean
-    public RestTemplateCustomizer restTemplateCustomizer() {
-        return new RestTemplateCustomizer() {
-            @Override
-            public void customize(RestTemplate restTemplate) {
-                restTemplate.setRequestFactory(new HttpComponentsClientHttpRequestFactory());
-            }
-        };
-    }
-
 }
