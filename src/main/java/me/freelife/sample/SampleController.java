@@ -16,6 +16,8 @@ public class SampleController {
 
     @GetMapping
     public String hello() {
+        log.info("SuperMan");
+        System.out.println("Flash");
         return "hello " + sampleService.getName();
     }
 }

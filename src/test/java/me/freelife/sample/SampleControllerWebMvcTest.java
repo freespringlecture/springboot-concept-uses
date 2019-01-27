@@ -21,6 +21,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(SampleController.class)
 public class SampleControllerWebMvcTest {
 
+    @Rule
+    public OutputCapture outputCapture = new OutputCapture();
+
     @MockBean
     SampleService mockSampleService;
 
@@ -35,5 +38,9 @@ public class SampleControllerWebMvcTest {
                 .andExpect(status().isOk()) // status 는 200 이고
                 .andExpect(content().string("hello ironman")) // content 는 hello ironman 이고
                 .andDo(print()); // 해당 사항들을 print로 출력함
+
+        assertThat(outputCapture.toString())
+                .contains("SuperMan")
+                .contains("Flash");
     }
 }
