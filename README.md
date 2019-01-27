@@ -1,81 +1,106 @@
-# 스프링 웹 MVC 9부: ExceptionHandler
-> SpringBoot에는 ErrorHandler가 이미 등록되어있음  
-> ErrorHandler에 의해서 Error 메세지들이 보임  
+# 스프링 웹 MVC 10부: Spring HATEOAS
+> Hypermedia ​A​s ​T​he ​E​ngine ​O​f A​ ​pplication ​S​tate  
+> HATEOAS를 구현하기에 편리한 기능들을 제공하는 라이브러리  
+> REST에서 R은 Representational  
+- 서버: 현재 리소스와 ​연관된 링크 정보​를 클라이언트에게 제공한다
+- 클라이언트: ​연관된 링크 정보​를 바탕으로 리소스에 접근한다
+- 연관된 링크 정보
+  - Rel​ation
+  - H​ypertext ​Ref​erence
 
-## 기본 @ExceptionHandler 테스트 코드
-> 해당 된 컨트롤러 내에서만 동작하는 ExceptionHandler 테스트 코드  
-#### SampleController
+### spring-boot-starter-hateoas 의존성 추가
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-hateoas</artifactId>
+</dependency>
+```
+- https://spring.io/understanding/HATEOAS
+- https://spring.io/guides/gs/rest-hateoas/
+- https://docs.spring.io/spring-hateoas/docs/current/reference/html/
+
+## HATEOAS가 자동설정으로 제공하는 기능
+### ObjectMapper 제공
+> 제공하는 리소스를 JSON으로 변환할 때 사용하는 인터페이스  
+> 따로 디펜던시를 추가하지 않아도 바로 사용가능  
+- spring.jackson.*  
+> Properties 파일에서 ObjectMapper를 커스터마이징 할 수 있음  
+- Jackson2ObjectMapperBuilder  
+
+### LinkDiscovers 제공
+> REST API로 다른쪽 서버정보를 요청해서 응답을 받았는데 그 API가 HATEOAS를 지원하면  
+> getResourceByRelation 메서드로 self에 해당하는 링크 정보를 가져올 수 있는 Utility성 클래스  
+- 클라이언트 쪽에서 링크 정보를 Rel 이름으로 찾을때 사용할 수 있는 XPath 확장 클래스
+
+## HATEOAS 구현 테스트
+> HATEOAS에서 제공하는 Resource는 우리가 제공하는 Resource + Link정보  
+> Link를 만드는 다양한 클래스들이 존재하는데 Spring HATEOAS가 제공하는 것들임  
+
+1. 테스트 코드 작성
 ```java
-@Controller
+@RunWith(SpringRunner.class)
+@WebMvcTest(SampleController.class)
+public class SampleControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+
+    @Test
+    public void hello() throws Exception {
+        mockMvc.perform(get("/hello"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._links.self").exists());
+    }
+}
+```
+
+2. 컨트롤러 작성
+```java
+@RestController
 public class SampleController {
 
     @GetMapping("/hello")
-    public String hello() {
-        throw new SampleException();
-    }
+    public Resource<Hello> hello(){
+        Hello hello = new Hello();
+        hello.setPrefix("Hey,");
+        hello.setName("freelife");
 
-    // AppError: App에서 만든 커스텀한 에러정보를 담고 있는 클래스가 있다면
-    @ExceptionHandler(SampleException.class)
-    //메서드 파라메터로 해당하는 Exception 정보를 받아 올 수 있음
-    public @ResponseBody AppError sampleError(SampleException e) {
-        AppError appError = new AppError();
-        appError.setMessage("error.app.key");
-        appError.setReason("IDK IDK IDK");
-        return appError;
+        Resource<Hello> helloResource = new Resource<>(hello);
+        //SampleController 클래스에 존재하는 hello라는 메서드에 대한 링크를 만들어서 self라는 릴레이션을 만들어서 추가함
+        helloResource.add(linkTo(methodOn(SampleController.class).hello()).withSelfRel());
+
+        return helloResource;
     }
 }
 ```
 
-#### SampleException
+3. Hello 클래스 작성
 ```java
-public class SampleException extends RuntimeException {
+public class Hello {
+
+    private String prefix;
+    private String name;
+
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String toString() {
+        return prefix + " " + name;
+    }
 }
 ```
-
-#### AppError
-```java
-public class AppError {
-
-    private String message;
-    private String reason;
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public String getReason() {
-        return reason;
-    }
-
-    public void setReason(String reason) {
-        this.reason = reason;
-    }
-}
-```
-
-## 스프링 @MVC 예외 처리 방법 
-- @ControllerAdvice  
-  > ExceptionHandler 정의하면 여러 컨트롤러에서 발생하는 Exception을 처리하는 Handler가 동작하게 됨  
-- @ExchangepHandler  
-## 스프링 부트가 제공하는 기본 예외 처리기
-- BasicErrorController  
-  
-> 상속받아서 메서드를 오버라이딩해서 구현하는 것을 레퍼런스에서 추천함  
-> HTML로 요청하면 HTML로 응답하고 그 외에는 JSON으로 응답함  
-  - HTML과 JSON 응답 지원  
-- 커스터마이징 방법
-  - ErrorController 구현
-## 커스텀 에러 페이지
-https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-error-handling-custom-error-pages
-> 상태코드 값에 따라 다른 에러페이지 보여주기  
-
-### 에러 페이지 명
-> 경로: src/main/resources/public/error/  
-> 경로에 상태코드와 동일한 에러페이지를 만들어야 동작함 아니면 첫번째 숫자만 명시해서 만들어도 됨  
-- 404.html
-- 5xx.html
-- ErrorViewResolver 구현

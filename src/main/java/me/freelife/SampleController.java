@@ -1,27 +1,25 @@
 package me.freelife;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.hateoas.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
-@Controller
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+
+@RestController
 public class SampleController {
 
     @GetMapping("/hello")
-    public String hello() {
-        throw new SampleException();
-    }
+    public Resource<Hello> hello(){
+        Hello hello = new Hello();
+        hello.setPrefix("Hey,");
+        hello.setName("freelife");
 
-    /*
-    // AppError: App에서 만든 커스텀한 에러정보를 담고 있는 클래스가 있다면
-    @ExceptionHandler(SampleException.class)
-    //메서드 파라메터로 해당하는 Exception 정보를 받아 올 수 있음
-    public @ResponseBody AppError sampleError(SampleException e) {
-        AppError appError = new AppError();
-        appError.setMessage("error.app.key");
-        appError.setReason("IDK IDK IDK");
-        return appError;
+        Resource<Hello> helloResource = new Resource<>(hello);
+        //SampleController 클래스에 존재하는 hello라는 메서드에 대한 링크를 만들어서 self라는 릴레이션을 만들어서 추가함
+        helloResource.add(linkTo(methodOn(SampleController.class).hello()).withSelfRel());
+
+        return helloResource;
     }
-    */
 }
