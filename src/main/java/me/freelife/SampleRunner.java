@@ -10,11 +10,15 @@ import org.springframework.stereotype.Component;
 public class SampleRunner implements ApplicationRunner {
 
     @Autowired
+    private String hello;
+
+    @Autowired
     FreelifeProperties freelifeProperties;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
         System.out.println("=======================");
+        System.out.println(hello);
         System.out.println(freelifeProperties.getName());
         System.out.println(freelifeProperties.getAge());
         System.out.println("=======================");
