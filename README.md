@@ -1,85 +1,44 @@
-# 스프링 웹 MVC 7부: Thymeleaf
-> 스프링 웹 MVC로 동적 컨텐츠를 생성하는 방법  
+# 스프링 웹 MVC 8부: HtmlUnit
+## HTML 템플릿 뷰 테스트를 보다 전문적으로 하자
+> HTML을 단위테스트 하기 위한 Tool  
+  
+- http://htmlunit.sourceforge.net/
+- http://htmlunit.sourceforge.net/gettingStarted.html
 
-## 스프링 부트가 자동 설정을 지원하는 템플릿 엔진
-> View, Code Generation, Email Template 등에 사용  
-> 기본적인 템플릿은 같은데 값들이 경우에 따라 달라지는 동적인 컨텐츠를 표현해야 하므로 사용  
-- FreeMarker
-- Groovy
-- Thymeleaf
-- Mustache
+### 의존성추가
+> scope이 test이므로 test할때만 사용함
+```xml
+<dependency>
+  <groupId>​org.seleniumhq.selenium​</groupId>
+  <artifactId>​htmlunit-driver​</artifactId>
+  <scope>​test​</scope>
+</dependency>
+<dependency>
+  <groupId>​net.sourceforge.htmlunit​</groupId>
+  <artifactId>​htmlunit​</artifactId>
+  <scope>​test​</scope>
+</dependency>
+```
 
-## JSP를 권장하지 않는 이유
-> JSP는 자동설정을 지원하지 않는데다가 SpringBoot가 지향하는 바와 달라서 권장하지 않음  
-> SpringBoot는 기본적으로 독립적으로 실행가능한 임베디드 톰캣으로 빠르고 쉽게 만들어 배포하길 바람  
-> JAR JSP에 대한 의존성을 넣으면 의존성 문제가 생기는 등 여러가지 제약사항으로 잘 사용하지 않음  
-- JAR 패키징 할 때는 동작하지 않고, WAR 패키징 해야 함  
-  WAR로 패키징 하더라도 Embed-Tomcat으로 java -jar 실행할 수도 있고 다른 외부 Tomcat에 배포할 수도 있음
-- JBOSS에서 만든 가장 최신 Servlet 엔진 Undertow는 JSP를 지원하지 않음
-- https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-jsp-limitations
+### 테스트 가능한 기능
+- Form submit
+- 특정 브라우저인척 하기
+- 특정 문서의 엘리먼트를 가져와서 값을 비교하거나 할수있음
 
-## Thymeleaf 사용하기
-> Thymeleaf 를 사용하면 테스트시 본문 확인이 가능하지만 JSP는 힘듬  
-> 실제 렌더링된 결과는 Servlet 엔진이 해야되는 것인데  
-> Thymeleaf는 Servlet에 독립적인 엔진이기 때문에 View에 렌더링되는 결과를 확인할 수 있음  
-- https://www.thymeleaf.org/
-- https://www.thymeleaf.org/doc/articles/standarddialect5minutes.html
-- 의존성 추가: spring-boot-starter-thymeleaf
-- 템플릿 파일 위치: /src/main/resources/​template/  
-  > 템플릿 엔진 의존성이 추가 되면 모든 View는 template 폴더에서 찾게 됨  
-- 예제:  
-  https://github.com/thymeleaf/thymeleafexamples-stsm/blob/3.0-master/src/main/webapp/WEB-INF/templates/seedstartermng.html
-
-### 테스트 코드
-> View 이름과 Model만 확인하는 간단한 테스트  
+#### 테스트 코드
 ```java
 @RunWith(SpringRunner.class)
 @WebMvcTest(SampleController.class)
 public class SampleControllerTest {
 
     @Autowired
-    MockMvc mockMvc;
+    WebClient webClient;
 
     @Test
     public void hello() throws Exception {
-        // 요청 "/hello"
-        // 응답
-        // - 모델 name : freelife
-        // - 뷰 이름 : hello
-        mockMvc.perform(get("/hello"))
-                .andExpect(status().isOk())
-                .andDo(print())
-                .andExpect(view().name("hello"))
-                .andExpect(model().attribute("name", is("freelife")));
+        HtmlPage page = webClient.getPage("/hello"); // /hello 로 요청시
+        HtmlHeading1 h1 = page.getFirstByXPath("//h1"); //h1 제일 앞에있는 것 하나만 가져옴
+        assertThat(h1.getTextContent()).isEqualToIgnoringCase("ironman"); // 대소문자인것을 무시하고 문자열이 같은지 비교
     }
 }
-```
-
-#### Controller 코드
-```java
-@Controller
-public class SampleController {
-
-    @GetMapping("/hello")
-    public String hello(Model model) {
-        model.addAttribute("name", "freelife");
-        return "hello";
-    }
-}
-```
-
-#### resources/template 폴더에 hello.html 생성
-```html
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Title</title>
-</head>
-<body>
-    <h1 th:text="${name}">Name</h1>
-</body>
-</html>
 ```

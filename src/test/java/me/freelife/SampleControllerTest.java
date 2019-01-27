@@ -1,36 +1,28 @@
 package me.freelife;
 
+import com.gargoylesoftware.htmlunit.Page;
+import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.HtmlHeading1;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(SampleController.class)
 public class SampleControllerTest {
 
     @Autowired
-    MockMvc mockMvc;
+    WebClient webClient;
 
     @Test
     public void hello() throws Exception {
-        // 요청 "/hello"
-        // 응답
-        // - 모델 name : freelife
-        // - 뷰 이름 : hello
-        mockMvc.perform(get("/hello"))
-                .andExpect(status().isOk())
-                .andDo(print()) // view 렌더링 결과 출력
-                .andExpect(view().name("hello")) // view 템플릿이름이 hello 인지
-                .andExpect(model().attribute("name", is("freelife"))) //model name 속성이 freelife 인지
-                .andExpect(content().string(containsString("freelife"))); //html 문서에 freelife 문자열이 있으면
+        HtmlPage page = webClient.getPage("/hello"); // /hello 로 요청시
+        HtmlHeading1 h1 = page.getFirstByXPath("//h1"); //h1 제일 앞에있는 것 하나만 가져옴
+        assertThat(h1.getTextContent()).isEqualToIgnoringCase("freelife"); // 대소문자인것을 무시하고 문자열이 같은지 비교
     }
 }
