@@ -1,74 +1,59 @@
-# 스프링 데이터 9부: Redis
-> 캐시, 메시지 브로커, 키/밸류 스토어 등으로 사용 가능
+# 스프링 데이터 10부: MongoDB
+> MongoDB​는 JSON 기반의 도큐먼트 데이터베이스  
 
-### redis 의존성 추가
+### SpringData MongoDB 의존성 추가
+> MongoDB Reactive라는 것도 있는데 Spring Webflux를 사용하는 경우  
+> Reactive한 Stream과 Repository를 만들어 낼 수 있음  
 ```xml
 <dependency>
     <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-data-redis</artifactId>
+    <artifactId>spring-boot-starter-data-mongodb</artifactId>
 </dependency>
 ```
 
-### Redis 설치 및 실행 (도커)
-#### Redis 설치
+## MongoDB 설치 및 실행 (도커)
 ```bash
-docker run -p 6379:6379 --name redis_boot -d redis
+docker run -p 27017:27017 --name mongo_boot -d mongo
+docker exec -i -t mongo_boot bash
 ```
+- mongo
 
-#### Redis 접속
-```bash
-docker exec -i -t redis_boot redis-cli
-```
+## 스프링 데이터 몽고DB
+> 아래의 빈 들을 자동으로 설정해주고 지원해줘서 손쉽게 MongoDB를 사용할 수 있음  
+- MongoTemplate  
+- MongoRepository
 
-#### key 확인
-```bash
-127.0.0.1:6379> keys *
-(empty list or set)
-```
-
-## 스프링 데이터 Redis
-- https://projects.spring.io/spring-data-redis/
-### 스프링 데이터 Redis를 사용할 수 있는 두 가지 방법
-- StringRedisTemplate: String에 특화되어있는 Redis Template
-- RedisTemplate
-
-### 확장 Repository 클래스
-- extends CrudRepository  
-> SpringData 최상위 Repository 인터페이스  
-
-## Redis 주요 커맨드
-- https://redis.io/commands
-- keys*
-- get {key}
-- hgetall {key}
-- hget {key} {column}
-
-## 커스터마이징
-> properties 설정으로 커스터마이징이 가능  
-- spring.redis.*  
-
-## Redis 실습
-#### RedisRunner를 만들고 간단하게 데이터 추가 테스트
+## MongoDB 실습1
+#### Runner를 빈으로 추가하고 account를 insert 하는 테스트 로직 작성
 ```java
-@Component
-public class RedisRunner implements ApplicationRunner {
+@SpringBootApplication
+public class Application {
 
     @Autowired
-    StringRedisTemplate redisTemplate;
+    MongoTemplate mongoTemplate;
 
-    @Override
-    public void run(ApplicationArguments args) throws Exception {
-        ValueOperations<String, String> values = redisTemplate.opsForValue();
-        values.set("freelife", "flash");
-        values.set("springboot","2.0");
-        values.set("hello", "world");
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+
+    @Bean
+    public ApplicationRunner applicationRunner() {
+        return args -> {
+            Account account = new Account();
+            account.setEmail("aaa@bbb");
+            account.setUsername("aaa");
+
+            mongoTemplate.insert(account);
+
+            System.out.println("finished");
+        };
     }
 }
 ```
 
-#### Account 클래스 생성 하고 @RedisHash 추가
+#### Account 클래스 작성
 ```java
-@RedisHash("accounts")
+@Document(collection = "accounts")
 public class Account {
 
     @Id
@@ -102,61 +87,83 @@ public class Account {
 }
 ```
 
-#### AccountRepository 추가 후 CrudRepository 인터페이스 확장
+## MongoDB 실습2 - Repository
+#### MongoRepository를 확장한 interface 추가
 ```java
-public interface AccountRepository extends CrudRepository<Account, String> {
+public interface AccountRepository extends MongoRepository<Account, String> {
 }
 ```
 
-#### RedisRunner에 Repository로 처리하도록 테스트 코드 추가
+#### Repository를 사용하는 테스트 코드 작성
 ```java
-@Component
-public class RedisRunner implements ApplicationRunner {
-
-    @Autowired
-    StringRedisTemplate redisTemplate;
+@SpringBootApplication
+public class Application {
 
     @Autowired
     AccountRepository accountRepository;
 
-    @Override
-    public void run(ApplicationArguments args) throws Exception {
-        ValueOperations<String, String> values = redisTemplate.opsForValue();
-        values.set("freelife", "flash");
-        values.set("springboot","2.0");
-        values.set("hello", "world");
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
 
-        Account account = new Account();
-        account.setEmail("freejava1191@gmail.com");
-        account.setUsername("freelife");
+    @Bean
+    public ApplicationRunner applicationRunner() {
+        return args -> {
+            Account account = new Account();
+            account.setEmail("aaa@bbb");
+            account.setUsername("aaa");
+            accountRepository.insert(account);
 
-        accountRepository.save(account);
-
-        Optional<Account> byId = accountRepository.findById(account.getId());
-        System.out.println(byId.get().getUsername());
-        System.out.println(byId.get().getEmail());
+            System.out.println("finished");
+        };
     }
 }
 ```
 
-## 해쉬 값 조회
-####  해쉬값의 email 조회 
-```bash
-hget accounts:51d346c6-a039-409e-a914-69318dfa7cb4 email
-
-"freejava1191@gmail.com"
+## 내장형 MongoDB (테스트용)을 사용한 슬라이싱 테스트
+### 테스트용 embed MongoDB 의존성 추가  
+> 의존성만 추가해주면 내장용 MongoDB에 대한 자동설정을 지원해주므로 사용하기 매우 쉬움  
+```xml
+<dependency>
+    <groupId>de.flapdoodle.embed</groupId>
+    <artifactId>de.flapdoodle.embed.mongo</artifactId>
+    <scope>test</scope>
+</dependency>
 ```
 
-#### 전체 해쉬값 조회
-```bash
-hgetall accounts:51d346c6-a039-409e-a914-69318dfa7cb4
+### @DataMongoTest
+> MongoRepository에 관련된 빈 들만 전부 등록이 됨  
+> 테스트 해보면 내장 MongoDB만 사용해서 테스트 하며 운영 MongoDB에는 아무런 영향을 주지 않음  
+- AccountRepository에 findByEmail 추상 메서드 추가  
+```java
+public interface AccountRepository extends MongoRepository<Account, String> {
+    Optional<Account> findByEmail(String email);
+}
+```
 
-1) "_class"
-2) "me.freelife.springdataredis.account.Account"
-3) "id"
-4) "51d346c6-a039-409e-a914-69318dfa7cb4"
-5) "username"
-6) "freelife"
-7) "email"
-8) "freejava1191@gmail.com"
+### 테스트 코드 작성
+```java
+@RunWith(SpringRunner.class)
+@DataMongoTest
+public class AccountRepositoryTest {
+
+    @Autowired
+    AccountRepository accountRepository;
+
+    @Test
+    public void findByEmail() {
+        Account account = new Account();
+        account.setUsername("freelife");
+        account.setEmail("freejava1191@gmail.com");
+
+        accountRepository.save(account);
+
+        Optional<Account> byId = accountRepository.findById(account.getId());
+        assertThat(byId).isNotEmpty();
+
+        Optional<Account> byEmail = accountRepository.findByEmail(account.getEmail());
+        assertThat(byEmail).isNotEmpty();
+        assertThat(byEmail.get().getUsername()).isEqualTo("freelife");
+    }
+}
 ```

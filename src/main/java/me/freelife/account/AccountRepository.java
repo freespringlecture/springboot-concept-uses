@@ -1,6 +1,9 @@
 package me.freelife.account;
 
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
-public interface AccountRepository extends CrudRepository<Account, String> {
+import java.util.Optional;
+
+public interface AccountRepository extends MongoRepository<Account, String> {
+    Optional<Account> findByEmail(String email);
 }
