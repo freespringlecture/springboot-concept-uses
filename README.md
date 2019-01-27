@@ -1,43 +1,76 @@
-# 3. 자동 설정 이해
-## @SpringBootApplication
-> `@SpringBootApplication`은 세개의 어노테이션이 합쳐져 있음  
-> `@EnableAutoConfiguration`으로 인해 여러가지 설정이 자동으로 되고 웹 애플리케이션이 동작함  
-- `@SpringBootConfiguration`
-- `@ComponentScan`
-- `@EnableAutoConfiguration`
-  
-> 빈은 사실 두 단계로 나눠서 읽힘  
-- 1단계 : `@ComponentScan`
-- 2단계 : `@EnableAutoConfiguration`
+# 내장 웹 서버 응용 1부: 컨테이너와 포트
+## 컨테이너와 포트
+### 다른 서블릿 컨테이너로 변경
+https://docs.spring.io/spring-boot/docs/current/reference/html/howto-embedded-web-servers.html
+ - tomcat, jetty, undertow
+```xml
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-web</artifactId>
+	<exclusions>
+		<!-- Exclude the Tomcat dependency -->
+		<exclusion>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-tomcat</artifactId>
+		</exclusion>
+	</exclusions>
+</dependency>
+<!-- Use Jetty instead -->
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-jetty</artifactId>
+</dependency>
+```
 
-- `@EnableAutoConfiguration` 없이 애플리케이션을 구동할 수 있음
-> 단 아래와 같이 설정하면 웹 서버로서의 동작은 안함  
+### 웹서버사용하지않기
+https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#howto-externalize-configuration
+> WebServlet 의존성들이 클래스패스에 있더라도 무시하고 그냥 None WebApplication으로 실행하고 끝냄
+#### application.properties에 아래 설정
+```
+spring.main.web-application-type=none
+```
+
+#### @SpringBootApplication에 설정
 ```java
-@Configuration
-@ComponentScan
-public class SpringinitApplication {
-
+@SpringBootApplication
+public class Application {
     public static void main(String[] args) {
         SpringApplication application = new SpringApplication(Application.class);
         application.setWebApplicationType(WebApplicationType.NONE);
         application.run(args);
     }
+}
+```
+### 포트
+#### server.port
+https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#howto-use-short-command-line-arguments 
+#### 랜덤포트 
+> 아래와 같이 설정하면 랜덤으로 사용할 수 있는 포트 찾아서 띄워줌 
+```
+server.port=0
+```
+### ApplicationListner<ServletWebServerInitializedEvent>
+> 위와 같이 지정한 포트를 Application에서 어떻게 사용할 것인가
+https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#howto-discover-the-http-port-at-runtime
 
+#### 이벤트 리스너 생성
+> 웹서버가 생성이 되면 servletWebServer가 실행되고 이 이벤트 리스너 핸들러가 호출이 되고 onApplicationEvent 콜백이 실행됨  
+> 웹 애플리케이션 컨텍스트 이므로 웹서버를 알 수 있고 웹서버에서 포트 정보를 가져올 수 있음  
+```java
+@Component
+public class PortListener implements ApplicationListener<ServletWebServerInitializedEvent> {
+    @Override
+    public void onApplicationEvent(ServletWebServerInitializedEvent event) {
+      ServletWebServerApplicationContext applicationContext = event.getApplicationContext();
+      applicationContext.getWebServer().getPort();
+    }
 }
 ```
 
-## @ComponentScan
-> 아래의 어노테이션으로 지정된 클래스들은 모두 빈으로 등록됨  
-- @Component
-- @Configuration @Repository @Service @Controller @RestController
+### Enable HTTP Response Compression
+> 응답을 압축 해서 보냄  
+https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#how-to-enable-http-response-compression
 
-## @EnableAutoConfiguration 
-- spring-boot-autoconfigure 하위의 spring.factories
-> 아래의 파일의 meta에 설정에 필요한 자바 설정파일들을 아래의 키 값 밑에 설정되어있는 클래스들을 참조하여 모두 읽어들임  
-> 수 많은 자동 설정 파일들이 조건에 따라 적용되어 수많은 빈들이 생성이 되고  
-> 내장 톰캣을 사용해서 서블릿 컨테이너에서 웹 애플리케이션 하나가 동작하게 됨  
-`org.springframework.boot.autoconfigure.EnableAutoConfiguration`
-
-## @ConditionalOnXxxYyyZzz
-> 전부 다 읽어드리는 것은 아님  
-> 조건에 따라 어떤 빈은 등록하기도 하고 등록 안하기도 함  
+```
+server.compression.enabled=true
+```
