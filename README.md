@@ -74,6 +74,15 @@ public class RestRunner implements ApplicationRunner {
 > Stream API는 Subscribe 하기 전에는 Stream이 흐르지 않음 그냥 담아만 놓은 것과 같음  
 > Subscribe로 칸막이를 열어줘야 동작함  
 > 다양한 호출을 하기위해 추천함  
+
+#### webflux 의존성 추가
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-webflux</artifactId>
+</dependency>
+```
+
 #### RestRunner WebClient로 로직 변경  
 ```java
 @Component
