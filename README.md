@@ -1,15 +1,48 @@
-# 1. 스프링 부트 활용 소개
-## 스프링 부트 핵심 기능
-- SpringApplication
-- 외부 설정
-- 프로파일
-- 로깅
-- 테스트
-- Spring-Dev-Tools
+# SpringApplication 1부
+https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-spring-application.html#boot-features-spring-application
 
-## 각종 기술 연동
-- 스프링 웹 MVC
-- 스프링 데이터
-- 스프링 시큐리티
-- REST API 클라이언트
-- 다루지 않은 내용들
+## Debug 모드 찍기
+- Configuration - VM options 에 `-Ddebug` 입력
+- Configuration - Program arguments 에 `--debug` 입력
+
+## FailureAnalyzer
+> 로그를 예쁘게 출력하게 해줌
+
+## 배너
+- 배너는 MANIF  
+- resource 폴더에 banner.txt | gif | jpg | png 파일을 넣으면 배너를 출력 해줌  
+
+### 우선순위
+> banner.txt 파일이 있으면 우선 실행  
+
+#### 다른 위치에 놓고 싶을 시
+`spring.banner.location` 에 위치를 지정하면 된다
+
+#### 배너를 끄고 싶을 때
+```java
+application.setBannerMode(Banner.Mode.OFF);
+```
+
+### 배너를 Configuration 에서 설정 시
+```java
+application.setBanner(new Banner() {
+    @Override
+    public void printBanner(Environment environment, Class<?> sourceClass, PrintStream out) {
+        out.println("=========================");
+        out.println("FREELIFE");
+        out.println("=========================");
+    }
+});
+```
+
+## SpringApplicationBuilder로 빌더 패턴 사용하기
+```java
+@SpringBootApplication
+public class Application {
+    public static void main(String[] args) {
+        new SpringApplicationBuilder()
+                .sources(Application.class)
+                .run(args);
+    }
+}
+```
