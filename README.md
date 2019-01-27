@@ -1,21 +1,31 @@
-# 1. 의존성 관리 이해
-> `spring-boot-starter-parent` 를 지정하면 `spring-boot-dependencies` 에서 Dependencies에서 의존성을 정의해서 수많은 라이브러리들이 자동으로 설정됨
+# 2. 의존성 관리 응용
 
-## parent 상속구조를 사용하지 않을 때
-> 임의로 Spring Boot 버전 정의
-> 의존성 외에 다른 Spring Boot에 최적화된 설정들(인코딩설정, 리소스필터링등)때문에 parent로 정의하는게 좋음
-- 13.2.2 Using Spring Boot without the Parent POM
+## SpringBoot가 버전 관리를 하는 의존성 추가 예시 
+- spring-boot-starter-data-jpa dependency 추가
 ```xml
-<dependencyManagement>
-		<dependencies>
-		<dependency>
-			<!-- Import dependency management from Spring Boot -->
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-dependencies</artifactId>
-			<version>2.1.1.RELEASE</version>
-			<type>pom</type>
-			<scope>import</scope>
-		</dependency>
-	</dependencies>
-</dependencyManagement>
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+```
+
+## maven repository 검색
+https://mvnrepository.com/
+
+## SpringBoot가 버전 관리를 안하는 의존성 추가 예시 
+- ModelMapper dependency 추가
+> model을 자동으로 생성 mapping 해주는 라이브러리
+```xml
+<!-- https://mvnrepository.com/artifact/org.modelmapper/modelmapper -->
+<dependency>
+    <groupId>org.modelmapper</groupId>
+    <artifactId>modelmapper</artifactId>
+    <version>2.3.2</version>
+</dependency>
+```
+
+## Spring 버전 변경
+- `spring-boot-dependencies`에서 properties에서 spring 버전을 가져와서 오버라이딩 해서 지정
+```xml
+<spring.version>5.1.3.RELEASE</spring.version>
 ```
