@@ -79,23 +79,15 @@ public class RestRunner implements ApplicationRunner {
 @Component
 public class RestRunner implements ApplicationRunner {
 
-//    @Autowired
-//    RestTemplateBuilder restTemplateBuilder;
-
     @Autowired
     WebClient.Builder builder;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-//        RestTemplate restTemplate = restTemplateBuilder.build();
         WebClient webClient = builder.build();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-
-        // TODO /hello
-//        String helloResult = restTemplate.getForObject("http://localhost:8080/hello", String.class);
-//        System.out.println(helloResult);
 
         // Stream API는 Subscribe 하기 전에는 Stream이 흐르지 않음 그냥 담아만 놓은 것 뿐임
         // 아무동작을 하지 않고 단지 Mono만 만들어 둠
@@ -117,9 +109,6 @@ public class RestRunner implements ApplicationRunner {
         });
 
 
-        // TODO /world
-//        String worldResult = restTemplate.getForObject("http://localhost:8080/world", String.class);
-//        System.out.println(worldResult);
         Mono<String> worldMono = webClient.get().uri("http://localhost:8080/world")
                 .retrieve()
                 .bodyToMono(String.class);
