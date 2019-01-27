@@ -1,44 +1,81 @@
-# 스프링 웹 MVC 8부: HtmlUnit
-## HTML 템플릿 뷰 테스트를 보다 전문적으로 하자
-> HTML을 단위테스트 하기 위한 Tool  
-  
-- http://htmlunit.sourceforge.net/
-- http://htmlunit.sourceforge.net/gettingStarted.html
+# 스프링 웹 MVC 9부: ExceptionHandler
+> SpringBoot에는 ErrorHandler가 이미 등록되어있음  
+> ErrorHandler에 의해서 Error 메세지들이 보임  
 
-### 의존성추가
-> scope이 test이므로 test할때만 사용함
-```xml
-<dependency>
-  <groupId>​org.seleniumhq.selenium​</groupId>
-  <artifactId>​htmlunit-driver​</artifactId>
-  <scope>​test​</scope>
-</dependency>
-<dependency>
-  <groupId>​net.sourceforge.htmlunit​</groupId>
-  <artifactId>​htmlunit​</artifactId>
-  <scope>​test​</scope>
-</dependency>
-```
-
-### 테스트 가능한 기능
-- Form submit
-- 특정 브라우저인척 하기
-- 특정 문서의 엘리먼트를 가져와서 값을 비교하거나 할수있음
-
-#### 테스트 코드
+## 기본 @ExceptionHandler 테스트 코드
+> 해당 된 컨트롤러 내에서만 동작하는 ExceptionHandler 테스트 코드  
+#### SampleController
 ```java
-@RunWith(SpringRunner.class)
-@WebMvcTest(SampleController.class)
-public class SampleControllerTest {
+@Controller
+public class SampleController {
 
-    @Autowired
-    WebClient webClient;
+    @GetMapping("/hello")
+    public String hello() {
+        throw new SampleException();
+    }
 
-    @Test
-    public void hello() throws Exception {
-        HtmlPage page = webClient.getPage("/hello"); // /hello 로 요청시
-        HtmlHeading1 h1 = page.getFirstByXPath("//h1"); //h1 제일 앞에있는 것 하나만 가져옴
-        assertThat(h1.getTextContent()).isEqualToIgnoringCase("ironman"); // 대소문자인것을 무시하고 문자열이 같은지 비교
+    // AppError: App에서 만든 커스텀한 에러정보를 담고 있는 클래스가 있다면
+    @ExceptionHandler(SampleException.class)
+    //메서드 파라메터로 해당하는 Exception 정보를 받아 올 수 있음
+    public @ResponseBody AppError sampleError(SampleException e) {
+        AppError appError = new AppError();
+        appError.setMessage("error.app.key");
+        appError.setReason("IDK IDK IDK");
+        return appError;
     }
 }
 ```
+
+#### SampleException
+```java
+public class SampleException extends RuntimeException {
+}
+```
+
+#### AppError
+```java
+public class AppError {
+
+    private String message;
+    private String reason;
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+}
+```
+
+## 스프링 @MVC 예외 처리 방법 
+- @ControllerAdvice  
+  > ExceptionHandler 정의하면 여러 컨트롤러에서 발생하는 Exception을 처리하는 Handler가 동작하게 됨  
+- @ExchangepHandler  
+## 스프링 부트가 제공하는 기본 예외 처리기
+- BasicErrorController  
+  
+> 상속받아서 메서드를 오버라이딩해서 구현하는 것을 레퍼런스에서 추천함  
+> HTML로 요청하면 HTML로 응답하고 그 외에는 JSON으로 응답함  
+  - HTML과 JSON 응답 지원  
+- 커스터마이징 방법
+  - ErrorController 구현
+## 커스텀 에러 페이지
+https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-error-handling-custom-error-pages
+> 상태코드 값에 따라 다른 에러페이지 보여주기  
+
+### 에러 페이지 명
+> 경로: src/main/resources/public/error/  
+> 경로에 상태코드와 동일한 에러페이지를 만들어야 동작함 아니면 첫번째 숫자만 명시해서 만들어도 됨  
+- 404.html
+- 5xx.html
+- ErrorViewResolver 구현
