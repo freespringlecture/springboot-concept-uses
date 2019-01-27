@@ -2,8 +2,6 @@ package me.freelife;
 
 import me.freelife.account.Account;
 import me.freelife.account.AccountRepository;
-import me.freelife.springdataredis.account.Account;
-import me.freelife.springdataredis.account.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
