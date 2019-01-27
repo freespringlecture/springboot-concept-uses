@@ -1,36 +1,88 @@
-# 스프링 웹 MVC 1부: 소개
-## 스프링 웹 MVC
-https://docs.spring.io/spring/docs/current/spring-framework-reference/web.html#spring-web
+# 스프링 웹 MVC 2부: HttpMessageConverters
+https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-spring-mvc-message-converters
+> SpringFrameWork에서 제공하는 인터페이스 SpringMVC 의 일부분  
+> HTTP 요청 본문을 객체로 변경하거나, 객체를 HTTP 응답 본문으로 변경할 때 사용  
+> {“username”:”keesun”, “password”:”123”} <-> User  
+> 같이 사용되는 Spring Annotation  
+- @ReuqestBody
+- @ResponseBody
+  - @RestController을 사용하면 생략해도됨 자동으로 설정 뷰 네임 리졸버를 안타고 바로 MessageConverter 타고 응답 본문으로 내용이 들어감
+  - @Controller 이면 반드시 붙여야됨 붙이지 않으면 뷰 네임 리졸버에서 return 이름에 해당되는 뷰 네임 리졸버를 찾으려고 시도함
 
-## 스프링 부트 MVC
-> 아무런 설정 파일을 작성하지 않아도 스프링 부트가 제공해주는 기본 설정 때문에 스프링 웹 MVC 개발을 시작할 수 있다  
-> SpringBoot AutoConfiguration 플러그인 안에 WebMvcAutoConfiguration 가 자동설정을 제공  
-
-### hiddenHttpMethodFilter
-> Spring5 에서 제공해주는 Filter Spring3.0 부터 제공해오던 필터  
-> PUT, DELETE, PATCH 요청시 _method 라는 Hidden Form 파라메터로 어떤 메서드인지 값을 받아올 수 있음  
-> 그 값을 받아와서 Controller에 Mapping을 해줌 @DeleteMapping 등의 handler 만들 수 있음  
-
-### HttpPutFormContentFilter
-> HTTP POST 나 Form 데이터를 보낼 수 있게 Servlet Spec에 정의가 되어있음  
-> HTTP PUT 이나 PATCH 도 `application/x-wwww-form-urlencoded` 타입으로 Form 데이터를 보내오면  
-> HTTP POST 요청에서 꺼내올 수 있는 것처럼 HTTP PUT 이나 PATCH 에서도 꺼내올 수 있도록 Mapping 해주는 역할  
-
-## 스프링 부트 MVC 확장
-> 스프링 부트 MVC가 제공해주는 기능을 다 사용하면서 추가적으로 더 설정을 할때 아래와 같이 설정하고  
-> 추가적으로 필요한 Callback Method를 호출하여 정의하여 사용  
+## 예제코드 실습
+> 먼저 테스트 코드를 작성하고 테스트 하면서 로직 추가
+1. 테스트 코드 작성
 ```java
-@Configuration
-@EnableWebMvc
-public class WebConfig implements WebMvcConfigurer {
+@RunWith(SpringRunner.class)
+@WebMvcTest(UserController.class)
+public class UserControllerTest {
+
+    @Autowired
+    MockMvc mockMvc;
+    
+    @Test
+    public void createUser_JSON() throws Exception {
+        String userJson = "{\"username\":\"freelife\", \"password\":\"123\"}";
+        //요청을 만드는 단계
+        mockMvc.perform(post("/users/create")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .accept(MediaType.APPLICATION_JSON_UTF8)
+                .content(userJson))
+                //응답 확인단계
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.username", is(equalTo("freelife"))))
+                    .andExpect(jsonPath("$.password", is(equalTo("123"))));
+
+    }
 }
 ```
 
-## 스프링 MVC 재정의
-> 아래와 같이 `@EnableWebMvc` 를 같이 사용하면 모든 스프링 MVC 설정이 다 사라지고 재정의 해야됨  
+2. 컨트롤러 코드 작성
 ```java
-@Configuration
-@EnableWebMvc
-public class WebConfig implements WebMvcConfigurer {
+@RestController
+public class UserController {
+
+    @GetMapping("/hello")
+    public String hello(){
+        return "hello";
+    }
+
+    @PostMapping("/users/create")
+    public User create(@RequestBody User user){
+        return user;
+    }
+}
+```
+
+3. User 객체 클래스 생성
+```java
+public class User {
+    private Long id;
+    private String username;
+    private String password;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 }
 ```
