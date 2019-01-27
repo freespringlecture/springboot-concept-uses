@@ -1,31 +1,43 @@
-# 2. 의존성 관리 응용
+# 3. 자동 설정 이해
+## @SpringBootApplication
+> `@SpringBootApplication`은 세개의 어노테이션이 합쳐져 있음  
+> `@EnableAutoConfiguration`으로 인해 여러가지 설정이 자동으로 되고 웹 애플리케이션이 동작함  
+- `@SpringBootConfiguration`
+- `@ComponentScan`
+- `@EnableAutoConfiguration`
+  
+> 빈은 사실 두 단계로 나눠서 읽힘  
+- 1단계 : `@ComponentScan`
+- 2단계 : `@EnableAutoConfiguration`
 
-## SpringBoot가 버전 관리를 하는 의존성 추가 예시 
-- spring-boot-starter-data-jpa dependency 추가
-```xml
-<dependency>
-  <groupId>org.springframework.boot</groupId>
-  <artifactId>spring-boot-starter-data-jpa</artifactId>
-</dependency>
+- `@EnableAutoConfiguration` 없이 애플리케이션을 구동할 수 있음
+> 단 아래와 같이 설정하면 웹 서버로서의 동작은 안함  
+```java
+@Configuration
+@ComponentScan
+public class SpringinitApplication {
+
+    public static void main(String[] args) {
+        SpringApplication application = new SpringApplication(Application.class);
+        application.setWebApplicationType(WebApplicationType.NONE);
+        application.run(args);
+    }
+
+}
 ```
 
-## maven repository 검색
-https://mvnrepository.com/
+## @ComponentScan
+> 아래의 어노테이션으로 지정된 클래스들은 모두 빈으로 등록됨  
+- @Component
+- @Configuration @Repository @Service @Controller @RestController
 
-## SpringBoot가 버전 관리를 안하는 의존성 추가 예시 
-- ModelMapper dependency 추가
-> model을 자동으로 생성 mapping 해주는 라이브러리
-```xml
-<!-- https://mvnrepository.com/artifact/org.modelmapper/modelmapper -->
-<dependency>
-    <groupId>org.modelmapper</groupId>
-    <artifactId>modelmapper</artifactId>
-    <version>2.3.2</version>
-</dependency>
-```
+## @EnableAutoConfiguration 
+- spring-boot-autoconfigure 하위의 spring.factories
+> 아래의 파일의 meta에 설정에 필요한 자바 설정파일들을 아래의 키 값 밑에 설정되어있는 클래스들을 참조하여 모두 읽어들임  
+> 수 많은 자동 설정 파일들이 조건에 따라 적용되어 수많은 빈들이 생성이 되고  
+> 내장 톰캣을 사용해서 서블릿 컨테이너에서 웹 애플리케이션 하나가 동작하게 됨  
+`org.springframework.boot.autoconfigure.EnableAutoConfiguration`
 
-## Spring 버전 변경
-- `spring-boot-dependencies`에서 properties에서 spring 버전을 가져와서 오버라이딩 해서 지정
-```xml
-<spring.version>5.1.3.RELEASE</spring.version>
-```
+## @ConditionalOnXxxYyyZzz
+> 전부 다 읽어드리는 것은 아님  
+> 조건에 따라 어떤 빈은 등록하기도 하고 등록 안하기도 함  
