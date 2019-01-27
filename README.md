@@ -1,55 +1,43 @@
-# 프로파일
-- 특정한 프로파일에서만 특정한 빈을 등록 하고 싶을 때
-- 애플리케이션의 동작을 특정 프로파일일 경우 빈 설정을 다르게 하고 동작을 다르게 하고 싶을 때
+# 로깅 1부: 스프링 부트 기본 로거 설정
+https://docs.spring.io/spring/docs/5.0.0.RC3/spring-framework-reference/overview.html#overview-logging
+- Spring Core가 Commons Logging으로 Logging 하도록 기본 설정되어있음
+- Spring-JCL이 Commins Loggins -> SLF4j or Log4j2 로 자동으로 보내도록 설정해줌
+- SpringBoot에서 Commons Logging -> SLF4j -> Logback 로 보내서 Logback에서 로그를 찍도록 자동으로 변경설정함
 
-## @Profile 애노테이션은 어디에?
-> config package를 생성하고 각 Configuration Class를 만든다음 아래와 같이 지정
-- @Configuration
+## 스프링 부트 로깅
+- 기본적인 포맷 형식으로 로그가 출력됨
+### 핵심 라이브러리 디버깅
+https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-logging-console-output
+  
+> 일부 핵심 라이브러리(embeded container, Hibernate, Spring Boot)만 디버깅 모드로 출력  
+- program arguments: --debug
+- JVM Option: -Ddebug
+### 모든 라이브러리 디버깅
+> 전부 다 디버깅 모드로 `--trace`
+
+### 컬러출력
+https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-logging-color-coded-output
+  
+> `spring.output.ansi.enabled=always`  
+
+### 파일출력
+https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#boot-features-logging-file-output
+- `logging.file` 또는 `logging.path`로 설정
+- 10MB 마다 파일을 Rolling 이 되고 나머지는 Archive가 됨
+- `logging.file.max-size`, `logging.file.max-history` 등 옵션 설정 가능
+```
+logging.path=logs
+```
+
+### 로그 레벨 조정
+> `logging.level.패키지 = 로그레벨` 로 로그레벨 지정 가능  
+- application.properties
+```
+logging.level.me.freelife.springinit=DEBUG
+```
+#### java
 ```java
-@Profile("test")
-@Configuration
-public class TestConfiguration {
+private Logger logger = LoggerFactory.getLogger(SampleRunner.class);
 
-    @Bean
-    public String hello() {
-        return "hello test";
-    }
-}
-```
-
-## 어떤 프로파일을 활성화 할 것인가?
-- spring.profiles.active
-> properties에 직접 설정해서 사용  
-> 우선순위에 영향을 받음  
-```java
-spring.profiles.active=test
-```
-### Command Line 에서 직접 설정시 우선순위가 더 높아서 변경됨
-```bash
-mvn clean package -DskipTests
-java -jar target/XXX.jar --spring.profiles.active=prod
-```
-
-### program arguments 에 직접지정 하여 테스트
-```
---spring.profiles.acive=test
-```
-
-## 별도의 프로파일용 프로퍼티 파일로 분리하여 관리
-> `spring.profiles.acive`에 따라 해당 프로퍼티 파일이 더 우선순위를 가지므로 덮어씌움  
-> `application-{profile}.properties`  
-- application.properties(메인, 공통 프로퍼티)
-- applciation-test.properties
-- application-prod.properties
-
-## 어떤 프로파일을 추가할 것인가?
-> 추가할 프로파일을 설정할 수 있음  
-- spring.profiles.include
-```
-spring.profiles.include=proddb
-```
-
-- application-proddb.properties 파일을 추가후 프로퍼티를 설정하면 해당 프로퍼티 값을 가져올 수 있음
-```
-freelife.db-name=prod db
+logger.info(hello);
 ```
