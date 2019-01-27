@@ -20,9 +20,12 @@ public class FreelifeProperties {
     private int age;
 
     private String fullName;
+    private String dbName;
 
     //    @DurationUnit(ChronoUnit.SECONDS) // 값을 초로 받음 들어오지 않으면 기본 값은 30초
     private Duration sessionTimeout = Duration.ofSeconds(30);
+
+    private Duration readTimeout; //= Duration.ofMillis(1000);
 
     public String getName() {
         return name;
@@ -54,5 +57,21 @@ public class FreelifeProperties {
 
     public void setSessionTimeout(Duration sessionTimeout) {
         this.sessionTimeout = sessionTimeout;
+    }
+
+    public String getDbName() {
+        return dbName;
+    }
+
+    public void setDbName(String dbName) {
+        this.dbName = dbName;
+    }
+
+    public Duration getReadTimeout() {
+        return readTimeout;
+    }
+
+    public void setReadTimeout(Duration readTimeout) {
+        this.readTimeout = readTimeout;
     }
 }

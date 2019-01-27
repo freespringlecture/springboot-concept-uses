@@ -25,6 +25,10 @@ public class SampleRunner implements ApplicationRunner {
         logger.debug(hello);
         logger.debug(freelifeProperties.getName());
         logger.debug(freelifeProperties.getFullName());
+        logger.debug(String.valueOf(freelifeProperties.getAge()));
+        logger.debug(freelifeProperties.getDbName());
+        logger.debug(String.valueOf(freelifeProperties.getSessionTimeout()));
+        logger.debug(String.valueOf(freelifeProperties.getReadTimeout()));
         logger.debug("=======================");
     }
 }
