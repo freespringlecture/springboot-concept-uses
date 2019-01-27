@@ -30,6 +30,20 @@
             <version>2.9.8</version>
         </dependency>
 
+        <!-- webjars -->
+        <dependency>
+            <groupId>org.webjars.bower</groupId>
+            <artifactId>jquery</artifactId>
+            <version>3.3.1</version>
+        </dependency>
+
+        <!-- webjars 버전을 표시 안할 수 있도록 만들어주는 플러그인 -->
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>webjars-locator-core</artifactId>
+            <version>0.36</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
