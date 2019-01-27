@@ -3,6 +3,7 @@ package me.freelife;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -14,6 +15,9 @@ public class RestRunner implements ApplicationRunner {
     @Autowired
     WebClient.Builder builder;
 
+    @Autowired
+    RestTemplateBuilder restTemplateBuilder;
+
     @Override
     public void run(ApplicationArguments args) throws Exception {
         WebClient webClient = builder.build();
@@ -22,13 +26,11 @@ public class RestRunner implements ApplicationRunner {
         stopWatch.start();
 
         // Stream API는 Subscribe 하기 전에는 Stream이 흐르지 않음 그냥 담아만 놓은 것 뿐임
-        // 아무동작을 하지 않고 단지 Mono만 만들어 둠
-        Mono<String> helloMono = webClient.get().uri("http://localhost:8080/hello") // get으로 /hello 요청
+        Mono<String> helloMono = webClient.get().uri("/hello") // get으로 /hello 요청
                 .retrieve() // 응답값을 가져옴
                 .bodyToMono(String.class);// Mono Type으로 변경
 
         // hello subscribe 결과값은 String
-        // 비동기방식 이라 subscribe하고 Callback이 오면 로직을 수행
         helloMono.subscribe(s -> {
             System.out.println(s);
 
@@ -40,8 +42,7 @@ public class RestRunner implements ApplicationRunner {
             stopWatch.start();
         });
 
-
-        Mono<String> worldMono = webClient.get().uri("http://localhost:8080/world")
+        Mono<String> worldMono = webClient.get().uri("/world")
                 .retrieve()
                 .bodyToMono(String.class);
 
