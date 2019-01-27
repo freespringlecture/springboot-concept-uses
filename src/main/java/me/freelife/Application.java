@@ -2,15 +2,17 @@ package me.freelife;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.web.client.RestTemplateCustomizer;
-import org.springframework.boot.web.reactive.function.client.WebClientCustomizer;
-import org.springframework.context.annotation.Bean;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @SpringBootApplication
+@RestController
 public class Application {
+
+    @GetMapping("/hello")
+    public String hello() {
+        return "hello";
+    }
 
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
