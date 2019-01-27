@@ -1,26 +1,21 @@
 package me.freelife.account;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import java.util.Objects;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.redis.core.RedisHash;
 
-@Entity
+@RedisHash("accounts")
 public class Account {
 
     @Id
-    @GeneratedValue //Repository를 통해 저장을 할 때 ID를 자동으로 생성
-    private Long id;
+    private String id;
     private String username;
-    private String password;
     private String email;
-    private boolean active;
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -32,45 +27,11 @@ public class Account {
         this.username = username;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
     public String getEmail() {
         return email;
     }
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Account account = (Account) o;
-        return active == account.active &&
-                Objects.equals(id, account.id) &&
-                Objects.equals(username, account.username) &&
-                Objects.equals(password, account.password) &&
-                Objects.equals(email, account.email);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, username, password, email, active);
     }
 }

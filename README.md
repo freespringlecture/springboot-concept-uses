@@ -1,58 +1,86 @@
-# 스프링 데이터 8부: 데이터베이스 마이그레이션
+# 스프링 데이터 9부: Redis
+> 캐시, 메시지 브로커, 키/밸류 스토어 등으로 사용 가능
 
-## Flyway 
-https://docs.spring.io/spring-boot/docs/2.1.1.RELEASE/reference/htmlsingle/#howto-execute-flyway-database-migrations-on-startup  
-> Flyway와 Liquibase가 대표적이지만 Flyway에 대해서만 알아봄  
-https://flywaydb.org/  
-- 스키마나 데이터 변경시 버전관리 하듯이 관리할 수 있음  
-- Flyway는 기본적으로 SQL을 사용함  
-- 다른 Migration 툴에서는 Rollback 까지 지원함 이용가치가 많음  
-- flyway-database-migrations-on-startup
-
-### 의존성 추가
-- org.flywaydb:flyway-core
-
-### 마이그레이션 디렉토리
-- db/migration 또는 db/migration/{vendor}
-- spring.flyway.locations로 변경 가능
-
-### 마이그레이션 파일 이름
-- V숫자__이름.sql
-- V는 꼭 대문자로
-- 숫자는 순차적으로 (타임스탬프 권장)
-- 숫자와 이름 사이에 언더바 ​두 개​
-- 이름은 가능한 서술적으로
-
-## migration 실습
-1. /src/resources 에 db/migration 폴더 생성 (db.migration 으로 생성하면 에러남)
-2. V1__init.sql 파일 생성
-3. schema.sql의 SQL을 V1_init.sql 파일로 복사해서 붙여넣기 한 다음 schema.sql 파일 제거
-4. V1__init.sql SQL 교정
-```sql
-drop table if exists account;
-drop sequence if exists hibernate_sequence;
-create sequence hibernate_sequence start with 1 increment by 1;
-create table account (id bigint not null, email varchar(255), password varchar(255), username varchar(255), primary key (id));
+### redis 의존성 추가
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
 ```
-5. 서버 기동 후 Schema 정상적으로 생성되는 지 확인
-6. Account Entity에 active boolean 값 추가
+
+### Redis 설치 및 실행 (도커)
+#### Redis 설치
+```bash
+docker run -p 6379:6379 --name redis_boot -d redis
+```
+
+#### Redis 접속
+```bash
+docker exec -i -t redis_boot redis-cli
+```
+
+#### key 확인
+```bash
+127.0.0.1:6379> keys *
+(empty list or set)
+```
+
+## 스프링 데이터 Redis
+- https://projects.spring.io/spring-data-redis/
+### 스프링 데이터 Redis를 사용할 수 있는 두 가지 방법
+- StringRedisTemplate: String에 특화되어있는 Redis Template
+- RedisTemplate
+
+### 확장 Repository 클래스
+- extends CrudRepository  
+> SpringData 최상위 Repository 인터페이스  
+
+## Redis 주요 커맨드
+- https://redis.io/commands
+- keys*
+- get {key}
+- hgetall {key}
+- hget {key} {column}
+
+## 커스터마이징
+> properties 설정으로 커스터마이징이 가능  
+- spring.redis.*  
+
+## Redis 실습
+#### RedisRunner를 만들고 간단하게 데이터 추가 테스트
 ```java
-@Entity
+@Component
+public class RedisRunner implements ApplicationRunner {
+
+    @Autowired
+    StringRedisTemplate redisTemplate;
+
+    @Override
+    public void run(ApplicationArguments args) throws Exception {
+        ValueOperations<String, String> values = redisTemplate.opsForValue();
+        values.set("freelife", "flash");
+        values.set("springboot","2.0");
+        values.set("hello", "world");
+    }
+}
+```
+
+#### Account 클래스 생성 하고 @RedisHash 추가
+```java
+@RedisHash("accounts")
 public class Account {
 
     @Id
-    @GeneratedValue //Repository를 통해 저장을 할 때 ID를 자동으로 생성
-    private Long id;
+    private String id;
     private String username;
-    private String password;
     private String email;
-    private boolean active;
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -64,14 +92,6 @@ public class Account {
         this.username = username;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
     public String getEmail() {
         return email;
     }
@@ -79,42 +99,64 @@ public class Account {
     public void setEmail(String email) {
         this.email = email;
     }
+}
+```
 
-    public boolean isActive() {
-        return active;
-    }
+#### AccountRepository 추가 후 CrudRepository 인터페이스 확장
+```java
+public interface AccountRepository extends CrudRepository<Account, String> {
+}
+```
 
-    public void setActive(boolean active) {
-        this.active = active;
-    }
+#### RedisRunner에 Repository로 처리하도록 테스트 코드 추가
+```java
+@Component
+public class RedisRunner implements ApplicationRunner {
 
+    @Autowired
+    StringRedisTemplate redisTemplate;
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Account account = (Account) o;
-        return active == account.active &&
-                Objects.equals(id, account.id) &&
-                Objects.equals(username, account.username) &&
-                Objects.equals(password, account.password) &&
-                Objects.equals(email, account.email);
-    }
+    @Autowired
+    AccountRepository accountRepository;
 
     @Override
-    public int hashCode() {
-        return Objects.hash(id, username, password, email, active);
+    public void run(ApplicationArguments args) throws Exception {
+        ValueOperations<String, String> values = redisTemplate.opsForValue();
+        values.set("freelife", "flash");
+        values.set("springboot","2.0");
+        values.set("hello", "world");
+
+        Account account = new Account();
+        account.setEmail("freejava1191@gmail.com");
+        account.setUsername("freelife");
+
+        accountRepository.save(account);
+
+        Optional<Account> byId = accountRepository.findById(account.getId());
+        System.out.println(byId.get().getUsername());
+        System.out.println(byId.get().getEmail());
     }
 }
 ```
 
-7. 새로운 migration 스크립트 파일 V2__add_active.sql 추가
-> 한번 적용이 된 migration 스크립트는 절대로 다시 건드리면 안됨  
-```sql
-ALTER TABLE account ADD COLUMN active BOOLEAN;
+## 해쉬 값 조회
+####  해쉬값의 email 조회 
+```bash
+hget accounts:51d346c6-a039-409e-a914-69318dfa7cb4 email
+
+"freejava1191@gmail.com"
 ```
 
-## 컬럼명 변경 시 
-1. 새로운 migration 스크립트 추가해서 새로운 컬럼을 추가
-2. 기존 컬럼 데이터를 새로운 컬럼으로 이동
-3. 기존 컬럼 삭제 
+#### 전체 해쉬값 조회
+```bash
+hgetall accounts:51d346c6-a039-409e-a914-69318dfa7cb4
+
+1) "_class"
+2) "me.freelife.springdataredis.account.Account"
+3) "id"
+4) "51d346c6-a039-409e-a914-69318dfa7cb4"
+5) "username"
+6) "freelife"
+7) "email"
+8) "freejava1191@gmail.com"
+```

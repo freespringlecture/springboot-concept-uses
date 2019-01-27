@@ -1,12 +1,6 @@
 package me.freelife.account;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.CrudRepository;
 
-import java.util.Optional;
-
-//JpaRepository< Entity의 타입, ID의 타입>
-public interface AccountRepository extends JpaRepository<Account, Long> {
-//    Account findByUsername(String username);
-    Optional<Account> findByUsername(String username);
+public interface AccountRepository extends CrudRepository<Account, String> {
 }
-
