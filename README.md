@@ -18,7 +18,7 @@ docker run hello-world
 ## PostgreSQL 설치
 #### Docker로 PostgreSQL 설치
 ```bash
-docker run -p 5432:5432 -e POSTGRES_PASSWORD=1879asdf -e POSTGRES_USER=freelife -e POSTGRES_DB=springboot --name postgres_boot -d postgres
+docker run -p 5432:5432 -e POSTGRES_PASSWORD=pass -e POSTGRES_USER=freelife -e POSTGRES_DB=springboot --name postgres_boot -d postgres
 ```
 
 #### Docker container 중지
@@ -81,7 +81,7 @@ SELET * FROM account;
 ```
 spring.datasource.url=jdbc:postgresql://localhost:5432/springboot
 spring.datasource.username=freelife
-spring.datasource.password=1879asdf
+spring.datasource.password=pass
 ```
 
 #### PostgreSQL Runner 작성
