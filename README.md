@@ -33,7 +33,7 @@
 ```
 spring.datasource.url=jdbc:mysql://localhost:3306/springboot
 spring.datasource.username=freelife
-spring.datasource.password=1879asdf
+spring.datasource.password=pass
 ```
 
 ## MySQL 추가 (도커 사용)
@@ -84,7 +84,7 @@ show tables;
 ## MySQL용 Datasource 설정
 - spring.datasource.url=jdbc:mysql://localhost:3306/springboot?useSSL=false
 - spring.datasource.username=freelife
-- spring.datasource.password=1879asdf
+- spring.datasource.password=pass
 
 
 ## MySQL 접속시 에러
