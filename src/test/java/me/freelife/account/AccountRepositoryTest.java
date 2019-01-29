@@ -41,7 +41,7 @@ public class AccountRepositoryTest {
 
         Account account = new Account();
         account.setUsername("freelife");
-        account.setPassword("1879asdf");
+        account.setPassword("pass");
 
         // 새로운 account 등록
         Account newAccount = accountRepository.save(account);
