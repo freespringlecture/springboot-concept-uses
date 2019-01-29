@@ -156,7 +156,7 @@ public class AccountRepositoryTest {
     public void di() throws SQLException {
         Account account = new Account();
         account.setUsername("freelife");
-        account.setPassword("1879asdf");
+        account.setPassword("pass");
 
         // 새로운 account 등록
         Account newAccount = accountRepository.save(account);
@@ -201,7 +201,7 @@ public class AccountRepositoryTest {
     public void di() throws SQLException {
         Account account = new Account();
         account.setUsername("freelife");
-        account.setPassword("1879asdf");
+        account.setPassword("pass");
 
         // 새로운 account 등록
         Account newAccount = accountRepository.save(account);
