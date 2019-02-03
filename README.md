@@ -7,7 +7,7 @@ https://gist.github.com/keesun/f93f0b83d7232137283450e08a53c4fd
 - HTTP는 못쓰네?
 
 ## HTTP 커넥터는 코딩으로 설정하기 
-https://github.com/spring-projects/spring-boot/tree/v2.0.3.RELEASE/spring-boot-samples/spring-boot-sample-tomcat-multi-connectors
+https://github.com/spring-projects/spring-boot/tree/master/spring-boot-samples/spring-boot-sample-tomcat-multi-connectors
 
 ## HTTP2 설정
 - server.http2.enable
@@ -56,7 +56,7 @@ curl -I -k --http2 https://localhost:8080/hello
 ```
 
 ### HTTP Connector 추가하기
-https://github.com/spring-projects/spring-boot/blob/v2.0.3.RELEASE/spring-boot-samples/spring-boot-sample-tomcat-multi-connectors/src/main/java/sample/tomcat/multiconnector/SampleTomcatTwoConnectorsApplication.java
+https://github.com/spring-projects/spring-boot/blob/master/spring-boot-samples/spring-boot-sample-tomcat-multi-connectors/src/main/java/sample/tomcat/multiconnector/SampleTomcatTwoConnectorsApplication.java
 ```java
    @Bean
     public ServletWebServerFactory serverFactory() {
